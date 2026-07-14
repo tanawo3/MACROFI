@@ -307,8 +307,8 @@ class MacroFiLending(gl.Contract):
         
         def leader_fn() -> dict:
             """Leader execution environment."""
-            fed_data = _fetch_url("https://www.federalreserve.gov/newsevents/pressreleases/monetary-policy-press-releases.htm")
-            ecb_data = _fetch_url("https://www.ecb.europa.eu/press/pr/date/2024/html/index.en.html")
+            fed_data = _fetch_url("https://www.federalreserve.gov/feeds/press_all.xml")
+            ecb_data = _fetch_url("https://www.ecb.europa.eu/rss/press.html")
             
             prompt = _interpret_adjust_prompt(asset, current_rate_bps, fed_data, ecb_data)
             analysis = gl.nondet.exec_prompt(prompt, response_format="json")
@@ -326,8 +326,8 @@ class MacroFiLending(gl.Contract):
             leader = leader_res.calldata
             if not isinstance(leader, dict): return False
             
-            fed_data = _fetch_url("https://www.federalreserve.gov/newsevents/pressreleases/monetary-policy-press-releases.htm")
-            ecb_data = _fetch_url("https://www.ecb.europa.eu/press/pr/date/2024/html/index.en.html")
+            fed_data = _fetch_url("https://www.federalreserve.gov/feeds/press_all.xml")
+            ecb_data = _fetch_url("https://www.ecb.europa.eu/rss/press.html")
             
             prompt = _interpret_adjust_prompt(asset, current_rate_bps, fed_data, ecb_data)
             prompt += f"\n\nDoes the following action make sense? {leader.get('action')}, Rate Change: {leader.get('rate_change_bps')}"
