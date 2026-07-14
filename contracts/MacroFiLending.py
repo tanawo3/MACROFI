@@ -709,6 +709,6 @@ def _parse_bool(analysis, key: str) -> bool:
 
 def _clean_summary(analysis, key: str = "rationale") -> str:
     if isinstance(analysis, dict):
-        return _deep_sanitize(str(analysis.get(key, "")))[:512]
+        return _deep_sanitize(str(analysis.get(key, "")))[:2048]
     return "Error: Output generation failure."
 
