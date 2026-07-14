@@ -1,0 +1,6 @@
+{
+  "name": "MacroFi Lending Protocol",
+  "description": "DeFi Lending Protocol application that dynamically adjusts economic parameters based on real-world macroeconomic data using GenLayer Intelligent Contracts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
