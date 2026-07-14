@@ -75,7 +75,7 @@ export const Dashboard: React.FC<{
               <h4 className="text-[var(--text-lime)] text-3xl font-display uppercase tracking-widest mb-6 relative z-10">
                 LATEST INTELLIGENCE REPORT
               </h4>
-              <p className="text-xl md:text-2xl font-sans leading-relaxed text-[var(--text-main)] relative z-10 max-w-4xl">
+              <p className="text-xl md:text-2xl font-sans leading-relaxed text-[var(--text-main)] relative z-10 max-w-4xl w-full break-words whitespace-normal text-wrap-pretty">
                 {protocolState.last_update_rationale}
               </p>
             </motion.div>
