@@ -92,6 +92,7 @@ class MacroFiLending(gl.Contract):
     loan_app_counter: u256
     macro_summaries: TreeMap[str, MacroSummary]
     pool_ids: DynArray[str]
+    owner: str
     
     def __init__(self):
         """
