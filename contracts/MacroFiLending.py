@@ -775,13 +775,17 @@ Return ONLY the following JSON:
                 if is_late:
                     prof.late_repayments = u256(int(prof.late_repayments) + 1)
                     
+                total_loans = int(prof.total_loans_repaid)
+                late_reps = int(prof.late_repayments)
+                curr_trust = int(prof.trust_score)
+                
                 def leader_fn() -> dict:
                     prompt = f"""You are a Credit Scoring Oracle. A borrower just repaid a loan.
 Wallet: {borrower}
 Late Repayment: {is_late}
-Total Loans Repaid: {int(prof.total_loans_repaid)}
-Late Repayments: {int(prof.late_repayments)}
-Current Trust Score: {int(prof.trust_score)}
+Total Loans Repaid: {total_loans}
+Late Repayments: {late_reps}
+Current Trust Score: {curr_trust}
 
 ASSESSMENT GUIDELINES:
 1. If the repayment is on time (Late=False), increase the trust score (e.g. +500).
@@ -796,8 +800,8 @@ Return ONLY the following JSON:
                     if isinstance(analysis, str):
                         import json
                         try: analysis = json.loads(analysis)
-                        except: analysis = {"new_trust_score": int(prof.trust_score)}
-                    return {"new_trust_score": int(analysis.get("new_trust_score", int(prof.trust_score)))}
+                        except: analysis = {"new_trust_score": curr_trust}
+                    return {"new_trust_score": int(analysis.get("new_trust_score", curr_trust))}
                     
                 def validator_fn(leader_res) -> bool:
                     if not isinstance(leader_res, gl.vm.Return): return False
@@ -1366,12 +1370,13 @@ Return ONLY the following JSON:
         Any user can propose an upgrade. The GenVM Oracle pre-screens the proposal.
         """
         sender = str(gl.message.sender_address)
+        constitution = self.protocol_constitution
         
         def leader_fn() -> dict:
             prompt = f"""You are a constitutional compliance checker for MACROFI DAO.
 
 DAO CHARTER / CONSTITUTION:
-{self.protocol_constitution}
+{constitution}
 
 PROPOSAL TO EVALUATE:
 Title: {title}
@@ -1601,7 +1606,7 @@ Reply with ONLY JSON:
                 return False
             return abs(int(my_res.get("confidence", 0)) - int(their_res.get("confidence", 0))) <= 15
             
-        result = gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
+        result = gl.vm.run_nondet(leader_fn, validator_fn)
         
         is_fault = bool(result.get("is_fault", False))
         dispute.is_fault = is_fault
