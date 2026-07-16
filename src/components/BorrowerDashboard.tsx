@@ -58,7 +58,7 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
             <Shield className="w-6 h-6" /> TRUST PROFILE
           </h4>
           
-          {profile && (profile.is_verified || profile.kyc_status === 'VERIFIED') ? (
+          {profile && Object.keys(profile).length > 1 && (profile.is_verified === true || profile.kyc_status === 'VERIFIED') ? (
             <div className="flex flex-col gap-4">
               <div className="bg-black p-4 border border-[var(--text-lime)] flex justify-between items-center">
                 <span className="font-mono text-zinc-500 uppercase">Trust Score</span>
@@ -82,7 +82,7 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
               <input type="text" placeholder="GitHub Username" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={github} onChange={e => setGithub(e.target.value)} />
               <input type="text" placeholder="Twitter Username" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={twitter} onChange={e => setTwitter(e.target.value)} />
               <Magnetic>
-                <button onClick={() => genLayer.linkSocials(github, twitter)} className="btn-outline w-full py-3 mt-2">LINK ACCOUNTS</button>
+                <button onClick={async () => { await genLayer.linkSocials(github, twitter); await loadData(); }} className="btn-outline w-full py-3 mt-2">LINK ACCOUNTS</button>
               </Magnetic>
               
               <div className="border-t border-zinc-800 my-2 pt-4">
