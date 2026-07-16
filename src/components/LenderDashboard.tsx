@@ -14,6 +14,7 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
   const [disputeAppId, setDisputeAppId] = useState('');
   const [disputeReason, setDisputeReason] = useState('');
   const [disputeEvidence, setDisputeEvidence] = useState('');
+  const [arbitrateId, setArbitrateId] = useState('');
   
   // Treasury Derived Stats
   const treasury = protocolState?.treasury || { total_deposited_wei: 0, total_borrowed_wei: 0 };
