@@ -85,6 +85,19 @@ export const Dashboard: React.FC<{
           )}
         </AnimatePresence>
 
+        {/* Protocol Constitution */}
+        <div className="brutalist-panel p-8 border border-[var(--border-color)]">
+          <h4 className="text-[var(--text-main)] text-2xl font-display uppercase tracking-widest mb-4">
+            PROTOCOL CONSTITUTION
+          </h4>
+          <p className="text-sm font-mono text-zinc-400 leading-relaxed mb-6">
+            All AI Arbitrations and Autonomous Decisions strictly adhere to this governing document.
+          </p>
+          <div className="bg-black p-6 border border-zinc-800 font-mono text-sm text-[var(--text-lime)]">
+            {protocolState?.protocol_constitution || "MACROFI Default Constitution: All loans must be repaid on time. Borrowers must not rug-pull projects linked to their identity. Fraud is strictly prohibited."}
+          </div>
+        </div>
+
         {/* Ledger View */}
         <div className="flex flex-col gap-6">
           <div className="flex justify-between items-end border-b-2 border-[var(--border-color)] pb-4">

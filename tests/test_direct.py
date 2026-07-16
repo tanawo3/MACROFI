@@ -79,10 +79,14 @@ def test_macrofi_arbitration(genlayer_mock):
     genlayer_mock.set_sender("0xLender")
     dispute_id = contract.raise_dispute("APP-1", "Borrower rugged the DAO", "https://twitter.com/rugpuller_x/status/123")
     
+    # 3.5 Submit Defense
+    genlayer_mock.set_sender("0xBorrower")
+    contract.submit_defense(dispute_id, "I did not rug, the market crashed", "https://github.com/borrower/defense")
+
     # 4. Mock AI Arbitration
     def mock_ai(*args, **kwargs):
         if "Arbitrator" in args[0]:
-            return '{"is_fault": true, "confidence": 95, "notes": "Confirmed rug pull via Twitter link"}'
+            return '{"is_fault": true, "confidence": 95, "notes": "Confirmed rug pull despite defense"}'
         return '{"status": "APPROVED", "collateral_ratio_bps": 8000, "reason": "Ok", "confidence": 90, "positive_factors": [], "risk_factors": []}'
     
     genlayer_mock.set_mock_oracle(mock_ai)

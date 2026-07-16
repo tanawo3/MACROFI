@@ -128,6 +128,7 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
         {loans.map((loan, idx) => (
           <div key={idx} className="brutalist-panel p-6 border-l-4 border-l-[var(--text-lime)] flex flex-col gap-4">
             <div className="flex justify-between items-center">
+               {/* existing loan UI */}
               <span className="font-mono font-bold text-xl">{loan.app_id}</span>
               <span className={`px-3 py-1 text-xs font-bold uppercase ${loan.status === 'APPROVED' ? 'bg-[var(--text-lime)] text-black' : loan.status === 'COUNTER_OFFER' ? 'bg-orange-500 text-black' : loan.status === 'REJECTED' ? 'bg-red-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
                 {loan.status}
@@ -149,22 +150,6 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
                   <div>
                     <span className="font-bold text-[var(--text-lime)] not-italic uppercase text-xs">Confidence Score: </span>
                     <span className="font-mono text-white not-italic bg-[var(--text-lime)]/20 px-2 py-0.5 rounded">{loan.confidence}%</span>
-                  </div>
-                )}
-                {loan.positive_factors && loan.positive_factors.length > 0 && (
-                  <div>
-                    <span className="block font-bold text-[var(--text-lime)] not-italic uppercase text-xs mb-1">Positive Factors:</span>
-                    <ul className="list-disc pl-4 marker:text-[var(--text-lime)] text-xs not-italic text-zinc-400">
-                      {loan.positive_factors.map((f: string, i: number) => <li key={i}>{f}</li>)}
-                    </ul>
-                  </div>
-                )}
-                {loan.risk_factors && loan.risk_factors.length > 0 && (
-                  <div>
-                    <span className="block font-bold text-red-500 not-italic uppercase text-xs mb-1">Risk Factors:</span>
-                    <ul className="list-disc pl-4 marker:text-red-500 text-xs not-italic text-zinc-400">
-                      {loan.risk_factors.map((f: string, i: number) => <li key={i}>{f}</li>)}
-                    </ul>
                   </div>
                 )}
               </div>
@@ -192,6 +177,26 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
             </div>
           </div>
         ))}
+      </div>
+
+      {/* BORROWER DEFENSE CENTER */}
+      <div className="brutalist-panel p-8 border border-blue-900/50 relative overflow-hidden mt-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-900/10 blur-[100px] rounded-full mix-blend-screen pointer-events-none" />
+        <h4 className="text-blue-500 text-2xl font-display uppercase tracking-widest mb-6">
+          Defense Terminal (Appeals)
+        </h4>
+        <p className="text-zinc-400 font-mono text-sm mb-6 max-w-2xl">
+          Has a Lender raised an unfair dispute against you? Submit your defense reason and evidence here. The AI Oracle will cross-examine both claims based on the Protocol Constitution.
+        </p>
+
+        <div className="flex flex-col gap-4">
+          <input type="text" placeholder="Dispute ID (e.g. DISPUTE-1)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-blue-500" value={(window as any).defenseId || ''} onChange={e => (window as any).defenseId = e.target.value} />
+          <input type="text" placeholder="Your Defense (e.g. I did not rug, the market crashed)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-blue-500" value={(window as any).defenseReason || ''} onChange={e => (window as any).defenseReason = e.target.value} />
+          <input type="text" placeholder="Evidence URL (GitHub/Twitter proof)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-blue-500" value={(window as any).defenseUrl || ''} onChange={e => (window as any).defenseUrl = e.target.value} />
+          <Magnetic>
+            <button onClick={() => genLayer.submitDefense((window as any).defenseId, (window as any).defenseReason, (window as any).defenseUrl)} className="bg-blue-900/30 text-blue-400 border border-blue-900 hover:bg-blue-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">SUBMIT DEFENSE</button>
+          </Magnetic>
+        </div>
       </div>
     </div>
   );
