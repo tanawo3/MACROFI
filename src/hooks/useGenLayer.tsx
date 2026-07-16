@@ -537,7 +537,7 @@ export const useGenLayer = () => {
       }
   };
 
-  const updateConstitution = async (newConstitution: string) => {
+  const submitProposal = async (title: string, newConstitution: string) => {
       if (!contractAddress) return;
       setError(null);
       try {
@@ -546,14 +546,54 @@ export const useGenLayer = () => {
           const hash = await (client as any).writeContract({
               address: contractAddress,
               account: address ? { address } : undefined,
-              functionName: 'update_constitution',
-              args: [newConstitution]
+              functionName: 'submit_proposal',
+              args: [title, newConstitution]
           });
           addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
       } catch (e: any) {
-          setError("Failed to update constitution: " + (e?.message || ""));
+          setError("Failed to submit proposal: " + (e?.message || ""));
+      }
+  };
+
+  const voteProposal = async (propId: string, support: boolean) => {
+      if (!contractAddress) return;
+      setError(null);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'vote_proposal',
+              args: [propId, support]
+          });
+          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+      } catch (e: any) {
+          setError("Failed to vote: " + (e?.message || ""));
+      }
+  };
+
+  const executeProposal = async (propId: string) => {
+      if (!contractAddress) return;
+      setError(null);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'execute_proposal',
+              args: [propId]
+          });
+          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+      } catch (e: any) {
+          setError("Failed to execute proposal: " + (e?.message || ""));
       }
   };
 
@@ -666,7 +706,9 @@ export const useGenLayer = () => {
     raiseDispute,
     arbitrateDispute,
     submitDefense,
-    updateConstitution,
+    submitProposal,
+    voteProposal,
+    executeProposal,
     getDisputes,
     aiLiquidate,
     aiVouch,

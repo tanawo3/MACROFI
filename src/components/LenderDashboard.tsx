@@ -129,6 +129,46 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
           </Magnetic>
         </div>
       </div>
+
+      {/* AI DAO GOVERNANCE TERMINAL */}
+      <div className="brutalist-panel p-8 border border-emerald-900/50 relative overflow-hidden mt-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-900/10 blur-[100px] rounded-full mix-blend-screen pointer-events-none" />
+        <h4 className="text-emerald-500 text-2xl font-display uppercase tracking-widest mb-6">
+          <i className="fa-solid fa-gavel"></i> Constitutional DAO Governance
+        </h4>
+        <p className="text-zinc-400 font-mono text-sm mb-6 max-w-2xl">
+          Submit proposals to upgrade the protocol constitution. The AI Oracle acts as the Supreme Court and pre-screens proposals for malicious intent. Passed proposals will be voted on using Proof-of-Reputation.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="flex flex-col gap-4">
+            <h5 className="text-[var(--text-main)] font-mono text-sm uppercase">Submit Proposal</h5>
+            <input type="text" placeholder="Title (e.g. Decrease global interest to 3%)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-emerald-500" value={(window as any).propTitle || ''} onChange={e => (window as any).propTitle = e.target.value} />
+            <textarea placeholder="New Constitution Text..." className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-emerald-500 min-h-[100px]" value={(window as any).propConst || ''} onChange={e => (window as any).propConst = e.target.value} />
+            <Magnetic>
+              <button onClick={() => genLayer.submitProposal((window as any).propTitle, (window as any).propConst)} className="bg-emerald-900/30 text-emerald-400 border border-emerald-900 hover:bg-emerald-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">SUBMIT PROPOSAL</button>
+            </Magnetic>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <h5 className="text-[var(--text-main)] font-mono text-sm uppercase">Vote & Execute</h5>
+            <input type="text" placeholder="Proposal ID (e.g. PROP-1)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-emerald-500" value={(window as any).propId || ''} onChange={e => (window as any).propId = e.target.value} />
+            <div className="grid grid-cols-2 gap-2">
+              <Magnetic>
+                <button onClick={() => genLayer.voteProposal((window as any).propId, true)} className="bg-green-900/30 text-green-400 border border-green-900 hover:bg-green-500 hover:text-black transition-colors w-full py-3 font-mono uppercase tracking-widest">VOTE YES</button>
+              </Magnetic>
+              <Magnetic>
+                <button onClick={() => genLayer.voteProposal((window as any).propId, false)} className="bg-red-900/30 text-red-400 border border-red-900 hover:bg-red-500 hover:text-black transition-colors w-full py-3 font-mono uppercase tracking-widest">VOTE NO</button>
+              </Magnetic>
+            </div>
+            <Magnetic>
+              <button onClick={() => genLayer.executeProposal((window as any).propId)} className="bg-zinc-900 text-zinc-400 border border-zinc-700 hover:bg-white hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">EXECUTE PROPOSAL</button>
+            </Magnetic>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
+
+export default LenderDashboard;

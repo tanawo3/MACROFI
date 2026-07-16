@@ -166,6 +166,41 @@ def test_macrofi_vouching(genlayer_mock):
     # Senior Voucher should be slashed from 90 -> 40 (90 - 50)
     assert int(contract.borrower_profiles["0xSeniorLender"].trust_score) == 40
 
+def test_macrofi_dao(genlayer_mock):
+    contract = genlayer_mock.deploy_contract("MacroFiLending")
+    
+    # 1. Setup a trusted member (Voter)
+    genlayer_mock.set_sender("0xVoter")
+    contract.link_socials("voter_x", "voter_github")
+    contract.borrower_profiles["0xVoter"].trust_score = 100
+    
+    # 2. Submit Malicious Proposal (Should be blocked by AI)
+    genlayer_mock.set_sender("0xAttacker")
+    def mock_ai_reject(*args, **kwargs):
+        return '{"decision": "reject", "reason": "Malicious attempt to steal funds"}'
+    genlayer_mock.set_mock_oracle(mock_ai_reject)
+    
+    prop_id = contract.submit_proposal("Steal Funds", "Send all GEN to 0xAttacker")
+    assert contract.proposals[prop_id].status == "REJECTED_BY_AI"
+    
+    # 3. Submit Valid Proposal (Should pass AI pre-screening)
+    genlayer_mock.set_sender("0xProposer")
+    def mock_ai_pass(*args, **kwargs):
+        return '{"decision": "pass", "reason": "Valid governance update"}'
+    genlayer_mock.set_mock_oracle(mock_ai_pass)
+    
+    valid_prop = contract.submit_proposal("Update interest rate", "New Constitution: 5% global interest")
+    assert contract.proposals[valid_prop].status == "VOTING"
+    
+    # 4. Vote on Proposal
+    genlayer_mock.set_sender("0xVoter")
+    contract.vote_proposal(valid_prop, True)
+    assert int(contract.proposals[valid_prop].votes_for) == 100
+    
+    # 5. Execute Proposal
+    contract.execute_proposal(valid_prop)
+    assert contract.proposals[valid_prop].status == "EXECUTED"
+    assert contract.protocol_constitution == "New Constitution: 5% global interest"
 if __name__ == '__main__':
     class MockGenLayer:
         def deploy_contract(self, name):
@@ -178,4 +213,5 @@ if __name__ == '__main__':
     test_macrofi_credlayer_features(MockGenLayer())
     test_macrofi_liquidation(MockGenLayer())
     test_macrofi_vouching(MockGenLayer())
+    test_macrofi_dao(MockGenLayer())
     print("All direct logic tests passed!")

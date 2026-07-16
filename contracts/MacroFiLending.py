@@ -119,6 +119,17 @@ class Dispute:
     defense_url: str
     has_defended: bool
 
+@dataclass
+class Proposal:
+    proposal_id: str
+    author: str
+    title: str
+    new_constitution: str
+    status: str  # PENDING_AI, VOTING, REJECTED, EXECUTED
+    votes_for: u256
+    votes_against: u256
+    voters: str  # serialized JSON array of addresses
+
 class _NativeRecipient:
     class View:
         pass
@@ -148,6 +159,8 @@ class MacroFiLending(gl.Contract):
     disputes: TreeMap[str, Dispute]
     vouches: TreeMap[str, str]
     dispute_counter: u256
+    proposals: TreeMap[str, Proposal]
+    proposal_counter: u256
     protocol_constitution: str
     owner: str
     
@@ -158,6 +171,7 @@ class MacroFiLending(gl.Contract):
         """
         self.owner = str(gl.message.sender_address)
         self.dispute_counter = u256(0)
+        self.proposal_counter = u256(0)
         self.protocol_constitution = "MACROFI Default Constitution: All loans must be repaid on time. Borrowers must not rug-pull projects linked to their identity. Fraud is strictly prohibited."
         self.create_lending_pool("GLOBAL", "USD", 5.5)
         self.macro_summaries["global"] = MacroSummary(
@@ -1069,9 +1083,104 @@ class MacroFiLending(gl.Contract):
     # AI ARBITRATION (DISPUTE RESOLUTION)
     # =========================================================================
     @gl.public.write
-    def update_constitution(self, new_constitution: str) -> bool:
-        self._require_owner()
-        self.protocol_constitution = new_constitution
+    def submit_proposal(self, title: str, new_constitution: str) -> str:
+        """
+        AI Constitutional DAO Governance.
+        Any user can propose an upgrade. The GenVM Oracle pre-screens the proposal.
+        """
+        sender = str(gl.message.sender_address)
+        
+        def leader_fn() -> dict:
+            prompt = f"You are the AI Guardian of MACROFI DAO. Evaluate the following Constitution proposal.\n"
+            prompt += f"Current Constitution:\n{self.protocol_constitution}\n\n"
+            prompt += f"Proposed Constitution:\n{new_constitution}\n\n"
+            prompt += f"Title: {title}\n"
+            prompt += "Determine if this proposal is safe, legally compliant, and aligns with the protocol's core lending mechanics. If it contains malicious intent (e.g. stealing funds, arbitrary owner access, bypassing security), you MUST reject it.\n"
+            prompt += "Return JSON exactly like: {'decision': 'pass' or 'reject', 'reason': '<str>'}\n"
+            
+            analysis = gl.nondet.exec_prompt(prompt, response_format="json")
+            if isinstance(analysis, str):
+                import json
+                try: analysis = json.loads(analysis)
+                except: analysis = {"decision": "reject", "reason": "Parse error"}
+            return {
+                "decision": str(analysis.get("decision", "reject")),
+                "reason": str(analysis.get("reason", ""))[:1024]
+            }
+            
+        def validator_fn(leader_res) -> bool:
+            if not isinstance(leader_res, gl.vm.Return): return False
+            data = leader_res.calldata
+            if not isinstance(data, dict): return False
+            return isinstance(data.get("decision"), str)
+            
+        verdict = gl.vm.run_nondet(leader_fn, validator_fn)
+        
+        status = "VOTING" if verdict["decision"] == "pass" else "REJECTED_BY_AI"
+        
+        self.proposal_counter += u256(1)
+        prop_id = f"PROP-{int(self.proposal_counter)}"
+        
+        import json
+        self.proposals[prop_id] = Proposal(
+            proposal_id=prop_id,
+            author=sender,
+            title=title,
+            new_constitution=new_constitution,
+            status=status,
+            votes_for=u256(0),
+            votes_against=u256(0),
+            voters=json.dumps([])
+        )
+        return prop_id
+        
+    @gl.public.write
+    def vote_proposal(self, prop_id: str, support: bool) -> bool:
+        if prop_id not in self.proposals:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Proposal not found")
+            
+        prop = self.proposals[prop_id]
+        if prop.status != "VOTING":
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Proposal is not in VOTING state")
+            
+        sender = str(gl.message.sender_address)
+        import json
+        voters = json.loads(prop.voters)
+        if sender in voters:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Already voted")
+            
+        # Get voter's weight (Proof of Reputation voting)
+        weight = 10  # default weight
+        if sender in self.borrower_profiles:
+            weight = max(1, int(self.borrower_profiles[sender].trust_score))
+            
+        if support:
+            prop.votes_for += u256(weight)
+        else:
+            prop.votes_against += u256(weight)
+            
+        voters.append(sender)
+        prop.voters = json.dumps(voters)
+        self.proposals[prop_id] = prop
+        return True
+        
+    @gl.public.write
+    def execute_proposal(self, prop_id: str) -> bool:
+        if prop_id not in self.proposals:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Proposal not found")
+            
+        prop = self.proposals[prop_id]
+        if prop.status != "VOTING":
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Cannot execute")
+            
+        # If votes for > against, update constitution
+        if int(prop.votes_for) > int(prop.votes_against):
+            self.protocol_constitution = prop.new_constitution
+            prop.status = "EXECUTED"
+        else:
+            prop.status = "DEFEATED"
+            
+        self.proposals[prop_id] = prop
         return True
 
     @gl.public.write
