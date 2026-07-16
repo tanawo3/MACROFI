@@ -83,6 +83,7 @@ class BorrowerProfile:
     kyc_status: str
     total_loans_repaid: u256
     late_repayments: u256
+    ai_vouch_notes: str
 
 
 @allow_storage
@@ -492,6 +493,10 @@ class MacroFiLending(gl.Contract):
             
         decision = gl.vm.run_nondet(leader_fn, validator_fn)
         
+        # Save AI feedback to the voucher's profile so they can see why they were accepted/rejected
+        voucher_prof.ai_vouch_notes = decision["reason"]
+        self.borrower_profiles[voucher] = voucher_prof
+        
         if decision["approved"]:
             import json
             v_list = []
@@ -552,7 +557,8 @@ class MacroFiLending(gl.Contract):
             identity_score=u256(0),
             kyc_status="UNVERIFIED",
             total_loans_repaid=u256(0),
-            late_repayments=u256(0)
+            late_repayments=u256(0),
+            ai_vouch_notes=""
         )
         self.borrower_profiles[borrower] = prof
         return True
@@ -576,7 +582,8 @@ class MacroFiLending(gl.Contract):
                 identity_score=u256(0),
                 kyc_status="PENDING",
                 total_loans_repaid=u256(0),
-                late_repayments=u256(0)
+                late_repayments=u256(0),
+                ai_vouch_notes=""
             )
             
         def leader_fn() -> dict:

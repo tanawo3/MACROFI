@@ -268,6 +268,12 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
         </p>
 
         <div className="flex flex-col gap-4">
+          {profile?.ai_vouch_notes && (
+            <div className="p-4 bg-black/60 border-l-4 border-l-purple-500 text-purple-200 text-sm italic font-mono mb-2">
+              <span className="block font-bold not-italic mb-1 text-purple-400">AI Oracle Feedback:</span>
+              "{profile.ai_vouch_notes}"
+            </div>
+          )}
           <input type="text" placeholder="Borrower Address (0x...)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-purple-500 font-mono" value={(window as any).vouchBorrower || ''} onChange={e => (window as any).vouchBorrower = e.target.value} />
           <textarea placeholder="Evidence (e.g. We built an AI protocol together, here is the repo URL...)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-purple-500 min-h-[100px]" value={(window as any).vouchEvidence || ''} onChange={e => (window as any).vouchEvidence = e.target.value} />
           
