@@ -695,9 +695,10 @@ export const useGenLayer = () => {
               args: [poolId],
               value: BigInt(amount)
           });
-          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          addTx({ hash, type: 'stake', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to stake: " + (e?.message || ""));
       }
@@ -715,9 +716,10 @@ export const useGenLayer = () => {
               functionName: 'withdraw_liquidity',
               args: [poolId, amount]
           });
-          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          addTx({ hash, type: 'unstake', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to unstake: " + (e?.message || ""));
       }
