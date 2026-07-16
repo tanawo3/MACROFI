@@ -5,22 +5,21 @@ import { useGenLayer } from '../hooks/useGenLayer';
 import { Magnetic } from './Magnetic';
 
 export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer> }> = ({ genLayer }) => {
-  const { address, contractAddress, network, raiseDispute, arbitrateDispute } = genLayer;
+  const { address, contractAddress, network, raiseDispute, arbitrateDispute, protocolState } = genLayer;
   
-  const [pools, setPools] = useState<any[]>([]);
-  const [treasury, setTreasury] = useState<any>(null);
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
 
   // Dispute state
   const [disputeAppId, setDisputeAppId] = useState('');
   const [disputeReason, setDisputeReason] = useState('');
   const [disputeEvidence, setDisputeEvidence] = useState('');
-  const [arbitrateId, setArbitrateId] = useState('');
-
-  // In a real app, you would fetch these from the contract via useGenLayer
-  // For the sake of this mock, we will use static or derived values for now
+  
+  // Treasury Derived Stats
+  const treasury = protocolState?.treasury || { total_deposited_wei: 0, total_borrowed_wei: 0 };
+  const deposited = Number(treasury.total_deposited_wei) / 1e18;
+  const borrowed = Number(treasury.total_borrowed_wei) / 1e18;
+  const reserveRatio = deposited > 0 ? (((deposited - borrowed) / deposited) * 100).toFixed(1) : "0.0";
   
   return (
     <div className="flex flex-col gap-8 w-full mt-12 pt-12 border-t-2 border-[var(--border-color)]">
@@ -31,21 +30,21 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Treasury Panel */}
         <div className="brutalist-panel p-8 bg-[var(--color-brand-grey)] border-[var(--border-color)]">
-          <h4 className="text-[var(--text-lime)] text-2xl font-display uppercase tracking-widest mb-6">
-            Global Treasury
+          <h4 className="text-[var(--text-lime)] text-2xl font-display uppercase tracking-widest mb-6 flex items-center gap-2">
+            <RefreshCcw className={`w-5 h-5 ${genLayer.isFetching ? 'animate-spin' : ''}`} /> Global Treasury
           </h4>
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
               <span className="font-mono text-zinc-500 uppercase">Total TVL (GEN)</span>
-              <span className="text-2xl font-bold">14,200</span>
+              <span className="text-2xl font-bold">{deposited.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
               <span className="font-mono text-zinc-500 uppercase">Total Borrowed</span>
-              <span className="text-2xl font-bold text-orange-500">8,450</span>
+              <span className="text-2xl font-bold text-orange-500">{borrowed.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center pb-2">
               <span className="font-mono text-zinc-500 uppercase">Reserve Ratio</span>
-              <span className="text-2xl font-bold text-[var(--text-lime)]">20%</span>
+              <span className={`text-2xl font-bold ${Number(reserveRatio) < 20 ? 'text-red-500' : 'text-[var(--text-lime)]'}`}>{reserveRatio}%</span>
             </div>
           </div>
         </div>
@@ -57,11 +56,11 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
           </h4>
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
-              <label className="font-mono text-xs text-zinc-500 uppercase">Stake Amount (GEN Wei)</label>
+              <label className="font-mono text-xs text-zinc-500 uppercase">Stake Amount (GEN)</label>
               <div className="flex gap-2">
                 <input type="number" className="bg-transparent border border-zinc-700 p-3 flex-1 outline-none focus:border-[var(--text-lime)]" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
                 <Magnetic>
-                  <button onClick={() => genLayer.stake('GLOBAL', parseInt(depositAmount))} className="btn-primary py-3 px-6 flex items-center gap-2">
+                  <button onClick={() => genLayer.stake('GLOBAL', Math.floor(Number(depositAmount) * 1e18))} className="btn-primary py-3 px-6 flex items-center gap-2">
                     <ArrowUpRight className="w-4 h-4" /> STAKE
                   </button>
                 </Magnetic>
@@ -69,10 +68,10 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="font-mono text-xs text-zinc-500 uppercase">Unstake Amount (GEN Wei)</label>
+              <label className="font-mono text-xs text-zinc-500 uppercase">Unstake Amount (GEN)</label>
               <div className="flex gap-2">
                 <input type="number" className="bg-transparent border border-zinc-700 p-3 flex-1 outline-none focus:border-orange-500" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} />
-                <button onClick={() => genLayer.unstake('GLOBAL', parseInt(withdrawAmount))} className="btn-outline border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black py-3 px-6 flex items-center gap-2">
+                <button onClick={() => genLayer.unstake('GLOBAL', Math.floor(Number(withdrawAmount) * 1e18))} className="btn-outline border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black py-3 px-6 flex items-center gap-2">
                   <ArrowDownRight className="w-4 h-4" /> UNSTAKE
                 </button>
               </div>

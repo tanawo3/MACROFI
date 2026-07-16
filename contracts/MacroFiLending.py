@@ -189,6 +189,14 @@ class MacroFiLending(gl.Contract):
             update_count=u256(0),
             last_updated=u256(0)
         )
+        self.treasury = json.dumps({"total_deposited_wei": 0, "total_borrowed_wei": 0})
+        self.liquidity_pools["GLOBAL"] = json.dumps({
+            "name": "Global Treasury Pool",
+            "total_deposits": 0,
+            "available_liquidity": 0,
+            "total_borrowed": 0,
+            "interest_rate_bps": 550
+        })
 
     def _require_owner(self):
         if str(gl.message.sender_address) != self.owner:
@@ -367,11 +375,25 @@ class MacroFiLending(gl.Contract):
         app = self.loan_applications[app_id]
         if str(gl.message.sender_address) != app.borrower:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Unauthorized")
-        if app.status != "COUNTER_OFFER":
-            raise gl.vm.UserError(f"{ERROR_EXPECTED} No counter offer exists")
+        if app.status != "CONDITIONAL_OFFER":
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} No conditional offer exists")
+            
+        treasury = json.loads(self.treasury)
+        debt_amount = int(app.debt)
+        
+        # Check if the protocol has enough liquidity
+        if treasury["total_deposited_wei"] - treasury["total_borrowed_wei"] < debt_amount:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Insufficient Global Treasury liquidity to fund this loan")
+            
+        treasury["total_borrowed_wei"] += debt_amount
+        self.treasury = json.dumps(treasury)
             
         app.status = "APPROVED"
         self.loan_applications[app_id] = app
+        
+        # Native transfer of loan amount to borrower
+        _NativeRecipient(Address(app.borrower)).emit_transfer(value=u256(debt_amount))
+        
         return True
 
     @gl.public.write
@@ -640,6 +662,12 @@ class MacroFiLending(gl.Contract):
             # Full repayment
             app.debt = u256(0)
             app.status = "REPAID"
+            
+            # Decrease global borrowed amount since they paid it back
+            treasury = json.loads(self.treasury)
+            treasury["total_borrowed_wei"] -= current_debt
+            self.treasury = json.dumps(treasury)
+            
             _NativeRecipient(Address(app.borrower)).emit_transfer(value=app.collateral)
             app.collateral = u256(0)
             
@@ -674,6 +702,11 @@ class MacroFiLending(gl.Contract):
         else:
             # Partial repayment
             app.debt = u256(current_debt - payment)
+            
+            # Decrease global borrowed amount since they paid a part back
+            treasury = json.loads(self.treasury)
+            treasury["total_borrowed_wei"] -= payment
+            self.treasury = json.dumps(treasury)
             
         self.loan_applications[app_id] = app
         return True
@@ -781,12 +814,15 @@ class MacroFiLending(gl.Contract):
         except:
             hist = []
             
+        treasury_data = json.loads(self.treasury) if hasattr(self, 'treasury') else {"total_deposited_wei": 0, "total_borrowed_wei": 0}
+            
         return json.dumps({
             "current_base_rate": int(p.current_base_rate_bps) / 100.0,
             "last_update_rationale": p.last_update_rationale,
             "update_counter": int(p.update_counter),
             "protocol_constitution": self.protocol_constitution,
-            "logs": hist
+            "logs": hist,
+            "treasury": treasury_data
         })
 
     @gl.public.write
