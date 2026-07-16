@@ -6,12 +6,14 @@ import { useSoundEffects } from '../hooks/useSoundEffects';
 import { SplitText } from './SplitText';
 import { Magnetic } from './Magnetic';
 import { BorrowerDashboard } from './BorrowerDashboard';
+import { LenderDashboard } from './LenderDashboard';
 
 export const Dashboard: React.FC<{ 
   genLayer: ReturnType<typeof useGenLayer>
 }> = ({ genLayer }) => {
   const { protocolState, isEvaluating, isFetching, adjustRates, fetchProtocolState } = genLayer;
   const { playHoverSound, playClickSound } = useSoundEffects();
+  const [activeTab, setActiveTab] = React.useState<'borrower' | 'lender'>('borrower');
 
   const currentRate = protocolState?.current_base_rate ?? 0.0;
   const logs = protocolState?.logs ?? [];
@@ -154,8 +156,27 @@ export const Dashboard: React.FC<{
           </div>
         </div>
 
-        {/* Borrower Identity & Loan Section */}
-        <BorrowerDashboard genLayer={genLayer} />
+        {/* Tabs for Borrower vs Lender */}
+        <div className="flex gap-4 mt-8 border-b border-[var(--border-color)]">
+          <button 
+            className={`py-4 px-8 font-display text-xl tracking-widest uppercase ${activeTab === 'borrower' ? 'text-[var(--text-lime)] border-b-2 border-[var(--text-lime)]' : 'text-zinc-500 hover:text-zinc-300'}`}
+            onClick={() => setActiveTab('borrower')}
+          >
+            Borrower Portal
+          </button>
+          <button 
+            className={`py-4 px-8 font-display text-xl tracking-widest uppercase ${activeTab === 'lender' ? 'text-[var(--text-lime)] border-b-2 border-[var(--text-lime)]' : 'text-zinc-500 hover:text-zinc-300'}`}
+            onClick={() => setActiveTab('lender')}
+          >
+            Lender / Liquidity
+          </button>
+        </div>
+
+        {activeTab === 'borrower' ? (
+          <BorrowerDashboard genLayer={genLayer} />
+        ) : (
+          <LenderDashboard genLayer={genLayer} />
+        )}
       </div>
     </div>
   );
