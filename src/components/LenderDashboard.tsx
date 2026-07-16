@@ -5,13 +5,19 @@ import { useGenLayer } from '../hooks/useGenLayer';
 import { Magnetic } from './Magnetic';
 
 export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer> }> = ({ genLayer }) => {
-  const { address, contractAddress, network } = genLayer;
+  const { address, contractAddress, network, raiseDispute, arbitrateDispute } = genLayer;
   
   const [pools, setPools] = useState<any[]>([]);
   const [treasury, setTreasury] = useState<any>(null);
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Dispute state
+  const [disputeAppId, setDisputeAppId] = useState('');
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeEvidence, setDisputeEvidence] = useState('');
+  const [arbitrateId, setArbitrateId] = useState('');
 
   // In a real app, you would fetch these from the contract via useGenLayer
   // For the sake of this mock, we will use static or derived values for now
@@ -71,6 +77,37 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* DISPUTE CENTER */}
+      <div className="brutalist-panel p-8 border border-red-900/50 relative overflow-hidden mt-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-red-900/10 blur-[100px] rounded-full mix-blend-screen pointer-events-none" />
+        <h4 className="text-red-500 text-2xl font-display uppercase tracking-widest mb-6">
+          AI Dispute Center
+        </h4>
+        <p className="text-zinc-400 font-mono text-sm mb-6 max-w-2xl">
+          Report fraudulent borrowers. The AI Oracle will independently verify external evidence. If proven, the borrower is slashed and marked DEFAULT_SLASHED.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="flex flex-col gap-4">
+            <h5 className="text-[var(--text-main)] font-mono text-sm uppercase">Raise a Dispute</h5>
+            <input type="text" placeholder="Loan Application ID (e.g. APP-1)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-red-500" value={disputeAppId} onChange={e => setDisputeAppId(e.target.value)} />
+            <input type="text" placeholder="Reason (e.g. Borrower rugged the DAO)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-red-500" value={disputeReason} onChange={e => setDisputeReason(e.target.value)} />
+            <input type="text" placeholder="Evidence URL (GitHub/Twitter proof)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-red-500" value={disputeEvidence} onChange={e => setDisputeEvidence(e.target.value)} />
+            <Magnetic>
+              <button onClick={() => raiseDispute(disputeAppId, disputeReason, disputeEvidence)} className="bg-red-900/30 text-red-400 border border-red-900 hover:bg-red-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">SUBMIT DISPUTE</button>
+            </Magnetic>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <h5 className="text-[var(--text-main)] font-mono text-sm uppercase">Arbitrate Pending Dispute</h5>
+            <input type="text" placeholder="Dispute ID (e.g. DISPUTE-1)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-orange-500" value={arbitrateId} onChange={e => setArbitrateId(e.target.value)} />
+            <Magnetic>
+              <button onClick={() => arbitrateDispute(arbitrateId)} className="bg-orange-900/30 text-orange-400 border border-orange-900 hover:bg-orange-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">TRIGGER AI ARBITRATION</button>
+            </Magnetic>
           </div>
         </div>
       </div>

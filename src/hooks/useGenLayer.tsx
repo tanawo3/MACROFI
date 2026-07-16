@@ -473,6 +473,53 @@ export const useGenLayer = () => {
       return [];
   };
 
+  const arbitrateDispute = async (disputeId: string) => {
+      if (!contractAddress) return;
+      setError(null);
+      setIsEvaluating(true);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'arbitrate_dispute',
+              args: [disputeId]
+          });
+          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+      } catch (e: any) {
+          setError("Arbitration failed: " + (e?.message || ""));
+      } finally {
+          setIsEvaluating(false);
+      }
+  };
+
+  const raiseDispute = async (appId: string, reason: string, evidenceUrl: string) => {
+      if (!contractAddress) return;
+      setError(null);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'raise_dispute',
+              args: [appId, reason, evidenceUrl]
+          });
+          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+      } catch (e: any) {
+          setError("Failed to raise dispute: " + (e?.message || ""));
+      }
+  };
+
+  const getDisputes = async () => {
+    return [];
+  };
+
   return {
     address,
     isConnected,
@@ -495,6 +542,9 @@ export const useGenLayer = () => {
     acceptConditionalOffer,
     getBorrowerProfile,
     getAllLoans,
+    raiseDispute,
+    arbitrateDispute,
+    getDisputes,
     network,
     setNetwork,
     networkName,
