@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { getGenLayerClient, GLOBAL_CONTRACT_ADDRESS, GenLayerNetwork } from '../utils/networkConfig';
 import contractCode from '../../contracts/MacroFiLending.py?raw';
 
@@ -167,6 +168,11 @@ export const useGenLayer = () => {
 
   const updateTxStatus = useCallback((hash: string, status: 'success' | 'failed', err?: string) => {
     setRecentTransactions(prev => prev.map(t => t.hash === hash ? { ...t, status, error: err } : t));
+    if (status === 'success') {
+      toast.success('Transaction Confirmed on GenLayer');
+    } else if (status === 'failed') {
+      toast.error(`Transaction Failed: ${err || 'Unknown error'}`);
+    }
   }, []);
 
   const deployContract = useCallback(async () => {

@@ -10,6 +10,7 @@ import { useSoundEffects } from './hooks/useSoundEffects';
 import { Magnetic } from './components/Magnetic';
 import { NavigationMenu } from './components/NavigationMenu';
 import { NetworkView } from './components/NetworkView';
+import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   const [isPreloaded, setIsPreloaded] = React.useState(false);
@@ -59,6 +60,7 @@ export default function App() {
 
   return (
     <div className="transition-colors duration-1000">
+      <Toaster position="bottom-right" toastOptions={{ style: { background: '#18181b', color: '#fff', border: '1px solid #27272a', fontFamily: 'monospace' } }} />
       <Preloader onComplete={() => setIsPreloaded(true)} />
       <NavigationMenu 
         isOpen={isMenuOpen} 
