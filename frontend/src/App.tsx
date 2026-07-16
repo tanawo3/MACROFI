@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { motion, useSpring, useMotionValue } from 'framer-motion';
-import { createClient } from 'genlayer-js';
+import { createClient, createAccount } from 'genlayer-js';
 import { studionet } from 'genlayer-js/chains';
-import { ShieldAlert, Activity, Layers, Zap, Triangle } from 'lucide-react';
+import { ShieldAlert, Activity, Layers, Zap, Triangle, UserCircle } from 'lucide-react';
 import './index.css';
 
 const client = createClient({
@@ -14,6 +14,9 @@ const CONTRACT_ADDRESS = '0x202Ba5E61E305a5510b90d7e53c5fB5a7e5d9E88';
 function App() {
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [account, setAccount] = useState<any>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
   const springConfig = { damping: 25, stiffness: 400 };
@@ -29,25 +32,53 @@ function App() {
     return () => window.removeEventListener('mousemove', moveCursor);
   }, [cursorX, cursorY]);
 
-  useEffect(() => {
-    async function fetchLoans() {
-      try {
-        setLoading(true);
-        const res = await client.readContract({
-          address: CONTRACT_ADDRESS,
-          functionName: 'get_all_loans',
-          args: []
-        });
-        const parsed = JSON.parse(res as string);
-        setLoans(parsed);
-      } catch (err) {
-        console.error("Error fetching loans:", err);
-      } finally {
-        setLoading(false);
-      }
+  const fetchLoans = async () => {
+    try {
+      setLoading(true);
+      const res = await client.readContract({
+        address: CONTRACT_ADDRESS,
+        functionName: 'get_all_loans',
+        args: []
+      });
+      const parsed = JSON.parse(res as string);
+      setLoans(parsed);
+    } catch (err) {
+      console.error("Error fetching loans:", err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchLoans();
   }, []);
+
+  const handleConnect = () => {
+    // Generate a temporary browser account for StudioNet
+    const newAccount = createAccount();
+    setAccount(newAccount);
+  };
+
+  const handleApplyLoan = async () => {
+    if (!account) return alert("Please connect wallet first!");
+    try {
+      setActionLoading(true);
+      await client.writeContract({
+        address: CONTRACT_ADDRESS,
+        functionName: 'apply_for_loan',
+        args: ["GLOBAL", "Testing GenLayer from Vercel UI!", 150, 10, 300],
+        account: account,
+        value: 0n
+      });
+      alert("Loan Applied Successfully! (Wait a moment for consensus)");
+      setTimeout(fetchLoans, 3000);
+    } catch (err) {
+      console.error(err);
+      alert("Error applying for loan.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   return (
     <div className="app-container">
@@ -75,7 +106,14 @@ function App() {
           <button className="nav-link"><Layers size={18}/> Pools</button>
           <button className="nav-link"><ShieldAlert size={18}/> Governance</button>
         </div>
-        <button className="glow-btn connect-btn">Connect Wallet</button>
+        {account ? (
+          <div className="account-badge">
+            <UserCircle size={18} className="text-accent"/>
+            {account.address.slice(0, 6)}...{account.address.slice(-4)}
+          </div>
+        ) : (
+          <button className="glow-btn connect-btn" onClick={handleConnect}>Connect Wallet</button>
+        )}
       </nav>
 
       <main className="main-content">
@@ -115,24 +153,44 @@ function App() {
             )}
           </div>
 
-          {/* Network Health */}
-          <div className="glass-panel stat-card">
-             <div className="card-header">
-              <Activity className="text-accent" />
-              <h3>System Status</h3>
+          <div className="side-panels">
+            {/* Action Center */}
+            <div className="glass-panel stat-card" style={{ marginBottom: '24px' }}>
+              <div className="card-header">
+                <Layers className="text-accent" />
+                <h3>Action Center</h3>
+              </div>
+              <div className="actions-list">
+                <button 
+                  className="action-btn" 
+                  onClick={handleApplyLoan} 
+                  disabled={actionLoading || !account}
+                >
+                  {actionLoading ? "Processing..." : "1. Apply for Loan"}
+                </button>
+                <p className="helper-text">Click to trigger a live GenVM transaction on StudioNet.</p>
+              </div>
             </div>
-            <div className="status-metrics">
-              <div className="metric">
-                <span className="label">Circuit Breaker</span>
-                <span className="value text-accent">ACTIVE</span>
+
+            {/* Network Health */}
+            <div className="glass-panel stat-card">
+               <div className="card-header">
+                <Activity className="text-accent" />
+                <h3>System Status</h3>
               </div>
-              <div className="metric">
-                <span className="label">Oracle Sync</span>
-                <span className="value">SYNCED</span>
-              </div>
-              <div className="metric">
-                <span className="label">Trust Index</span>
-                <span className="value">99.8%</span>
+              <div className="status-metrics">
+                <div className="metric">
+                  <span className="label">Circuit Breaker</span>
+                  <span className="value text-accent">ACTIVE</span>
+                </div>
+                <div className="metric">
+                  <span className="label">Oracle Sync</span>
+                  <span className="value">SYNCED</span>
+                </div>
+                <div className="metric">
+                  <span className="label">Trust Index</span>
+                  <span className="value">99.8%</span>
+                </div>
               </div>
             </div>
           </div>
@@ -311,6 +369,53 @@ function App() {
 
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+
+        .account-badge {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(255, 255, 255, 0.05);
+          padding: 8px 16px;
+          border-radius: 100px;
+          font-family: monospace;
+          color: rgba(255, 255, 255, 0.8);
+          border: 1px solid var(--glass-border);
+        }
+
+        .actions-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .action-btn {
+          width: 100%;
+          background: rgba(255, 255, 255, 0.05);
+          color: var(--text);
+          border: 1px solid var(--glass-border);
+          padding: 16px;
+          border-radius: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .action-btn:hover:not(:disabled) {
+          background: var(--accent);
+          color: #000;
+          border-color: var(--accent);
+        }
+
+        .action-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .helper-text {
+          font-size: 0.8rem;
+          color: rgba(255, 255, 255, 0.4);
+          text-align: center;
         }
       `}</style>
     </div>
