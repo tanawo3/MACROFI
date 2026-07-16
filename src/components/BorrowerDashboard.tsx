@@ -25,6 +25,7 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
   const [country, setCountry] = useState('');
   const [occupation, setOccupation] = useState('');
   const [pitch, setPitch] = useState('');
+  const [repayAmounts, setRepayAmounts] = useState<Record<string, string>>({});
   const [githubContribs, setGithubContribs] = useState('');
   const [daoVotes, setDaoVotes] = useState('');
   const [walletAgeDays, setWalletAgeDays] = useState('');
@@ -159,15 +160,24 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
           <div key={idx} className="brutalist-panel p-6 border-l-4 border-l-[var(--text-lime)] flex flex-col gap-4">
             <div className="flex justify-between items-center">
                {/* existing loan UI */}
-              <span className="font-mono font-bold text-xl">{loan.app_id}</span>
-              <span className={`px-3 py-1 text-xs font-bold uppercase ${loan.status === 'APPROVED' ? 'bg-[var(--text-lime)] text-black' : loan.status === 'COUNTER_OFFER' ? 'bg-orange-500 text-black' : loan.status === 'REJECTED' ? 'bg-red-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+              <span className="font-mono font-bold text-xl flex items-center gap-2">
+                <FileText className="w-5 h-5 text-zinc-500" />
+                {loan.app_id}
+              </span>
+              <span className={`px-3 py-1 text-xs font-bold uppercase rounded-full ${loan.status === 'APPROVED' ? 'bg-[var(--text-lime)] text-black' : loan.status === 'COUNTER_OFFER' ? 'bg-orange-500/20 text-orange-500 border border-orange-500/50' : loan.status === 'REJECTED' ? 'bg-red-500/20 text-red-400 border border-red-500/50' : loan.status === 'REPAID' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' : 'bg-zinc-800 text-zinc-400'}`}>
                 {loan.status}
               </span>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-              <div className="flex flex-col"><span className="text-xs text-zinc-500 uppercase">Collateral</span><span className="font-mono">{loan.collateral} Wei</span></div>
-              <div className="flex flex-col"><span className="text-xs text-zinc-500 uppercase">Debt</span><span className="font-mono text-red-400">{loan.debt} Wei</span></div>
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              <div className="bg-black/40 p-4 border border-zinc-800 rounded">
+                <span className="text-xs text-zinc-500 uppercase block mb-1">Locked Collateral</span>
+                <span className="font-mono text-lg">{loan.collateral} GEN</span>
+              </div>
+              <div className="bg-black/40 p-4 border border-zinc-800 rounded">
+                <span className="text-xs text-zinc-500 uppercase block mb-1">Total Debt Owed</span>
+                <span className="font-mono text-lg text-red-400">{loan.debt} GEN</span>
+              </div>
             </div>
 
             {loan.ai_notes && (
@@ -187,21 +197,38 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
 
             <div className="flex gap-4 mt-4">
               {loan.status === 'PENDING' && (
-                <button onClick={() => evaluateLoan(loan.app_id)} className="btn-outline py-2 px-4 text-sm" disabled={isEvaluating}>
+                <button onClick={() => evaluateLoan(loan.app_id)} className="btn-outline py-2 px-4 text-sm w-full" disabled={isEvaluating}>
                   {isEvaluating ? 'EVALUATING...' : 'TRIGGER AI EVALUATION'}
                 </button>
               )}
               {loan.status === 'COUNTER_OFFER' && (
-                <button onClick={() => acceptConditionalOffer(loan.app_id)} className="btn-primary bg-orange-500 text-black py-2 px-4 text-sm">
-                  ACCEPT OFFER
-                </button>
+                <div className="flex gap-2 w-full">
+                  <button onClick={() => acceptConditionalOffer(loan.app_id)} className="btn-primary bg-orange-500 text-black py-2 px-4 text-sm flex-1">
+                    ACCEPT OFFER
+                  </button>
+                  <button onClick={() => genLayer.declineOffer(loan.app_id)} className="btn-outline border-red-500/50 text-red-400 hover:bg-red-500/10 py-2 px-4 text-sm flex-1">
+                    DECLINE
+                  </button>
+                </div>
               )}
               {loan.status === 'APPROVED' && loan.debt !== '0' && (
-                <div className="flex flex-col gap-2 w-full">
-                    <button onClick={() => genLayer.repayLoan(loan.app_id, parseInt(loan.debt))} className="btn-outline border-[var(--text-lime)] text-[var(--text-lime)] py-2 px-4 text-sm w-full">
-                    REPAY LOAN
-                    </button>
-                    <p className="text-[10px] text-zinc-500 font-mono text-center">Repayment behavior dynamically updates your AI Trust Score.</p>
+                <div className="flex flex-col gap-3 w-full border-t border-zinc-800 pt-4 mt-2">
+                    <div className="flex gap-2">
+                      <input 
+                        type="number" 
+                        placeholder={`Amount (up to ${loan.debt})`} 
+                        className="bg-black border border-zinc-700 p-2 outline-none focus:border-[var(--text-lime)] text-sm flex-1 font-mono"
+                        value={repayAmounts[loan.app_id] || ''}
+                        onChange={e => setRepayAmounts({...repayAmounts, [loan.app_id]: e.target.value})}
+                      />
+                      <button 
+                        onClick={() => genLayer.repayLoan(loan.app_id, parseInt(repayAmounts[loan.app_id] || loan.debt))} 
+                        className="btn-outline border-[var(--text-lime)] text-[var(--text-lime)] hover:bg-[var(--text-lime)] hover:text-black py-2 px-6 text-sm whitespace-nowrap"
+                      >
+                        REPAY
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-mono text-center">Partial or full repayment dynamically updates your AI Trust Score.</p>
                 </div>
               )}
             </div>

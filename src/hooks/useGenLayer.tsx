@@ -359,7 +359,7 @@ export const useGenLayer = () => {
       }
   };
 
-  const repayLoan = async (appId: string, debtAmount: number) => {
+  const repayLoan = async (appId: string, amount: number) => {
       if (!contractAddress) return;
       setError(null);
       try {
@@ -369,14 +369,36 @@ export const useGenLayer = () => {
               address: contractAddress,
               account: address ? { address } : undefined,
               functionName: 'repay_loan',
-              args: [appId],
-              value: BigInt(debtAmount)
+              args: [appId, false],
+              value: BigInt(amount)
           });
           addTx({ hash, type: 'repay_loan', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
-      } catch (e: any) {
-          setError("Failed to repay loan: " + (e?.message || ""));
+          await fetchProtocolState();
+      } catch (err: any) {
+          setError(err.message || 'Failed to repay loan');
+      }
+  };
+
+  const declineOffer = async (appId: string) => {
+      if (!contractAddress) return;
+      setError(null);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'decline_offer',
+              args: [appId]
+          });
+          addTx({ hash, type: 'decline_offer', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+          await fetchProtocolState();
+      } catch (err: any) {
+          setError(err.message || 'Failed to decline offer');
       }
   };
 
@@ -705,6 +727,7 @@ export const useGenLayer = () => {
     linkSocials,
     submitIdentityVerification,
     acceptConditionalOffer,
+    declineOffer,
     getBorrowerProfile,
     getAllLoans,
     raiseDispute,

@@ -614,7 +614,7 @@ class MacroFiLending(gl.Contract):
     @gl.public.write.payable
     def repay_loan(self, app_id: str, is_late: bool = False) -> bool:
         """
-        Allows a borrower to repay their debt. Triggers AI Reputation update.
+        Allows a borrower to repay their debt partially or fully.
         """
         if app_id not in self.loan_applications:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Loan not found")
@@ -623,21 +623,50 @@ class MacroFiLending(gl.Contract):
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Unauthorized")
         if app.status != "APPROVED":
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Loan not active")
-        debt = int(app.debt)
-        if gl.message.value < debt:
-            raise gl.vm.UserError(f"{ERROR_EXPECTED} Insufficient. Need {debt}")
-        _NativeRecipient(Address(app.borrower)).emit_transfer(value=app.collateral)
-        app.status = "REPAID"
-        app.debt = u256(0)
+            
+        payment = int(gl.message.value)
+        if payment <= 0:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Payment must be > 0")
+            
+        current_debt = int(app.debt)
+        if payment >= current_debt:
+            # Full repayment
+            app.debt = u256(0)
+            app.status = "REPAID"
+            _NativeRecipient(Address(app.borrower)).emit_transfer(value=app.collateral)
+            app.collateral = u256(0)
+            
+            # Dynamic Reputation Engine
+            borrower = app.borrower
+            if borrower in self.borrower_profiles:
+                prof = self.borrower_profiles[borrower]
+                prof.total_loans_repaid = u256(int(prof.total_loans_repaid) + 1)
+                if is_late:
+                    prof.late_repayments = u256(int(prof.late_repayments) + 1)
+                self.borrower_profiles[borrower] = prof
+        else:
+            # Partial repayment
+            app.debt = u256(current_debt - payment)
+            
         self.loan_applications[app_id] = app
-        
-        # Dynamic Reputation Engine
-        borrower = app.borrower
-        if borrower in self.borrower_profiles:
-            prof = self.borrower_profiles[borrower]
-            prof.total_loans_repaid = u256(int(prof.total_loans_repaid) + 1)
-            if is_late:
-                prof.late_repayments = u256(int(prof.late_repayments) + 1)
+        return True
+
+    @gl.public.write
+    def decline_offer(self, app_id: str) -> bool:
+        """Allows the borrower to decline an AI counter-offer and get collateral back."""
+        if app_id not in self.loan_applications:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Loan not found")
+        app = self.loan_applications[app_id]
+        if str(gl.message.sender_address) != app.borrower:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Unauthorized")
+        if app.status != "COUNTER_OFFER":
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} No counter offer exists")
+            
+        app.status = "REJECTED"
+        _NativeRecipient(Address(app.borrower)).emit_transfer(value=app.collateral)
+        app.collateral = u256(0)
+        self.loan_applications[app_id] = app
+        return True
                 
             def leader_fn() -> dict:
                 prompt = f"Borrower {borrower} just repaid a loan. Late={is_late}. "
