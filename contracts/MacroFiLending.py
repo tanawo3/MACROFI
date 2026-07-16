@@ -1071,7 +1071,15 @@ class MacroFiLending(gl.Contract):
     def get_borrower_profile(self, wallet: str) -> str:
         if wallet not in self.borrower_profiles: return '{}'
         p = self.borrower_profiles[wallet]
-        return json.dumps({'wallet': p.wallet, 'github_handle': p.github_handle, 'twitter_handle': p.twitter_handle, 'trust_score': int(p.trust_score), 'is_verified': p.is_verified})
+        return json.dumps({
+            'wallet': p.wallet, 
+            'github_handle': p.github_handle, 
+            'twitter_handle': p.twitter_handle, 
+            'trust_score': int(p.trust_score), 
+            'is_verified': p.is_verified,
+            'total_loans_repaid': int(p.total_loans_repaid),
+            'late_repayments': int(p.late_repayments)
+        })
 
     # =========================================================================
     # AI ARBITRATION (DISPUTE RESOLUTION)
