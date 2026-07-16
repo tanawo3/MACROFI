@@ -29,6 +29,11 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
   const [githubContribs, setGithubContribs] = useState('');
   const [daoVotes, setDaoVotes] = useState('');
   const [walletAgeDays, setWalletAgeDays] = useState('');
+  const [defenseId, setDefenseId] = useState('');
+  const [defenseReason, setDefenseReason] = useState('');
+  const [defenseUrl, setDefenseUrl] = useState('');
+  const [vouchBorrower, setVouchBorrower] = useState('');
+  const [vouchEvidence, setVouchEvidence] = useState('');
   const [collat, setCollat] = useState('');
   const [loanType, setLoanType] = useState('PERSONAL');
   const [requestedAmount, setRequestedAmount] = useState('');
