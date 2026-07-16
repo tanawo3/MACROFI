@@ -4,7 +4,6 @@ import json
 import re
 from dataclasses import dataclass
 from genlayer import *
-import genlayer as gl
 
 # =============================================================================
 # ENTERPRISE PROTOCOL CONFIGURATION
