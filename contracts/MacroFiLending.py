@@ -119,6 +119,7 @@ class Dispute:
     defense_url: str
     has_defended: bool
 
+@allow_storage
 @dataclass
 class Proposal:
     proposal_id: str
