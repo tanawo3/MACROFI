@@ -305,7 +305,20 @@ class MacroFiLending(gl.Contract):
         dao_votes = int(app.dao_votes)
         wallet_age = int(app.wallet_age_days)
         
+        # Load profile for identity verification
+        github_handle = ""
+        if borrower in self.borrower_profiles:
+            github_handle = self.borrower_profiles[borrower].github_handle
+        
         def leader_fn() -> dict:
+            # Identity Verification via web.render
+            github_data = "No GitHub profile linked."
+            if github_handle:
+                try:
+                    github_data = gl.nondet.web.render(f"https://github.com/{github_handle}", mode="text")[:1000]
+                except Exception:
+                    github_data = "[EXTERNAL] GitHub profile unreachable"
+                    
             prompt = f"""You are a senior financial underwriter for MACROFI, a decentralized credit protocol.
 
 EVALUATION SUBJECT:
@@ -319,6 +332,9 @@ WALLET & REPUTATION (ON-CHAIN METRICS):
 - GitHub Contributions: {gh_contribs}
 - DAO Votes: {dao_votes}
 - Wallet Age: {wallet_age} days
+
+IDENTITY VERIFICATION (GITHUB):
+{github_data}
 
 SANITISED EVIDENCE (borrower-provided):
 <UNTRUSTED_DATA>
@@ -819,6 +835,18 @@ Return ONLY the following JSON:
         app.collateral = u256(0)
         self.loan_applications[app_id] = app
         return True
+
+    @gl.public.view
+    def get_highest_score(self) -> str:
+        """Returns the highest trust score among all borrowers as JSON."""
+        highest_score = 0
+        top_borrower = ""
+        for addr, profile in self.borrower_profiles.items():
+            score = int(profile.trust_score)
+            if score > highest_score:
+                highest_score = score
+                top_borrower = addr
+        return json.dumps({"borrower": top_borrower, "score": highest_score})
 
     @gl.public.view
     def get_all_loans(self) -> str:
@@ -1517,18 +1545,14 @@ Return ONLY the following JSON:
         def leader_fn() -> dict:
             evidence_data = "Could not fetch evidence."
             try:
-                resp = gl.nondet.web.get(url)
-                if resp.status < 400:
-                    evidence_data = resp.body.decode("utf-8")[:1000]
+                evidence_data = gl.nondet.web.render(url, mode="text")[:1000]
             except Exception:
                 evidence_data = "[EXTERNAL] Evidence unreachable"
 
             defense_data = "No defense evidence provided."
             if has_defended and defense_url:
                 try:
-                    resp = gl.nondet.web.get(defense_url)
-                    if resp.status < 400:
-                        defense_data = resp.body.decode("utf-8")[:1000]
+                    defense_data = gl.nondet.web.render(defense_url, mode="text")[:1000]
                 except Exception:
                     defense_data = "[EXTERNAL] Defense evidence unreachable"
 

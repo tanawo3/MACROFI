@@ -345,7 +345,7 @@ export const useGenLayer = () => {
       }
   };
 
-  const applyForLoan = async (poolId: string, pitch: string, loanType: string, requestedAmount: number, durationDays: number, monthlyIncomeUsd: number, githubContributions: number, daoVotes: number, walletAgeDays: number, collateralAmount: number) => {
+  const applyForLoan = async (poolId: string, pitch: string, loanType: string, requestedAmount: number, durationDays: number, monthlyIncomeUsd: number, githubContributions: number, daoVotes: number, walletAgeDays: number, collateralAmount: string) => {
       if (!contractAddress) return;
       setError(null);
       try {

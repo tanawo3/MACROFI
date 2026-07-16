@@ -151,7 +151,7 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
             </div>
             <input type="number" placeholder="Collateral (GEN Wei)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={collat} onChange={e => setCollat(e.target.value)} />
             <Magnetic>
-              <button onClick={() => applyForLoan('GLOBAL', pitch, loanType, parseInt(requestedAmount||'0'), parseInt(durationDays||'30'), parseInt(monthlyIncome||'0'), parseInt(githubContribs||'0'), parseInt(daoVotes||'0'), parseInt(walletAgeDays||'0'), parseInt(collat||'0'))} className="btn-primary w-full py-3 mt-2">SUBMIT APPLICATION</button>
+              <button onClick={() => applyForLoan('GLOBAL', pitch, loanType, parseInt(requestedAmount||'0'), parseInt(durationDays||'30'), parseInt(monthlyIncome||'0'), parseInt(githubContribs||'0'), parseInt(daoVotes||'0'), parseInt(walletAgeDays||'0'), collat || '0')} className="btn-primary w-full py-3 mt-2">SUBMIT APPLICATION</button>
             </Magnetic>
           </div>
         </div>
