@@ -561,6 +561,67 @@ export const useGenLayer = () => {
     return [];
   };
 
+  const aiLiquidate = async (appId: string) => {
+      if (!contractAddress) return;
+      setError(null);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'ai_liquidate',
+              args: [appId]
+          });
+          addTx({ hash, type: 'evaluate_loan', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+      } catch (e: any) {
+          setError("Failed to liquidate: " + (e?.message || ""));
+      }
+  };
+
+  const stake = async (poolId: string, amount: number) => {
+      if (!contractAddress) return;
+      setError(null);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'provide_liquidity',
+              args: [poolId, amount],
+              value: BigInt(amount)
+          });
+          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+      } catch (e: any) {
+          setError("Failed to stake: " + (e?.message || ""));
+      }
+  };
+
+  const unstake = async (poolId: string, amount: number) => {
+      if (!contractAddress) return;
+      setError(null);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'withdraw_liquidity',
+              args: [poolId, amount]
+          });
+          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+      } catch (e: any) {
+          setError("Failed to unstake: " + (e?.message || ""));
+      }
+  };
+
   return {
     address,
     isConnected,
@@ -588,6 +649,9 @@ export const useGenLayer = () => {
     submitDefense,
     updateConstitution,
     getDisputes,
+    aiLiquidate,
+    stake,
+    unstake,
     network,
     setNetwork,
     networkName,

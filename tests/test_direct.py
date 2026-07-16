@@ -101,6 +101,28 @@ def test_macrofi_arbitration(genlayer_mock):
     assert contract.disputes[dispute_id].status == "RESOLVED"
     assert contract.disputes[dispute_id].is_fault == True
 
+def test_macrofi_liquidation(genlayer_mock):
+    contract = genlayer_mock.deploy_contract("MacroFiLending")
+    
+    # 1. Setup
+    genlayer_mock.set_sender("0xBorrower")
+    contract.link_socials("rugpuller", "rugpuller_x")
+    contract.apply_for_loan("GLOBAL", "Pitch", 100, 5, 365)
+    
+    def mock_ai_approve(*args, **kwargs):
+        return '{"status": "APPROVED", "collateral_ratio_bps": 15000, "reason": "Ok", "confidence": 90}'
+    genlayer_mock.set_mock_oracle(mock_ai_approve)
+    contract.evaluate_loan("APP-1")
+    
+    # 2. Liquidate
+    genlayer_mock.set_sender("0xKeeper")
+    def mock_ai_liquidate(*args, **kwargs):
+        return '{"liquidate": true, "reason": "Borrower deleted GitHub account"}'
+    genlayer_mock.set_mock_oracle(mock_ai_liquidate)
+    contract.ai_liquidate("APP-1")
+    
+    assert contract.loan_applications["APP-1"].status == "LIQUIDATED"
+
 
 if __name__ == '__main__':
     class MockGenLayer:
@@ -111,4 +133,5 @@ if __name__ == '__main__':
         def set_mock_oracle(self, fn): pass
     test_macrofi_credlayer_features(MockGenLayer())
     test_macrofi_arbitration(MockGenLayer())
+    test_macrofi_liquidation(MockGenLayer())
     print('Tests conceptually passed.')

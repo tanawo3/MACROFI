@@ -53,27 +53,27 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
         {/* Deposit/Withdraw Panel */}
         <div className="brutalist-panel p-8">
           <h4 className="text-[var(--text-main)] text-2xl font-display uppercase tracking-widest mb-6">
-            Manage Liquidity (POOL-1)
+            Yield Staking (GLOBAL)
           </h4>
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
-              <label className="font-mono text-xs text-zinc-500 uppercase">Deposit Amount (GEN Wei)</label>
+              <label className="font-mono text-xs text-zinc-500 uppercase">Stake Amount (GEN Wei)</label>
               <div className="flex gap-2">
                 <input type="number" className="bg-transparent border border-zinc-700 p-3 flex-1 outline-none focus:border-[var(--text-lime)]" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
                 <Magnetic>
-                  <button className="btn-primary py-3 px-6 flex items-center gap-2">
-                    <ArrowUpRight className="w-4 h-4" /> DEPOSIT
+                  <button onClick={() => genLayer.stake('GLOBAL', parseInt(depositAmount))} className="btn-primary py-3 px-6 flex items-center gap-2">
+                    <ArrowUpRight className="w-4 h-4" /> STAKE
                   </button>
                 </Magnetic>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="font-mono text-xs text-zinc-500 uppercase">Withdraw Amount (GEN Wei)</label>
+              <label className="font-mono text-xs text-zinc-500 uppercase">Unstake Amount (GEN Wei)</label>
               <div className="flex gap-2">
                 <input type="number" className="bg-transparent border border-zinc-700 p-3 flex-1 outline-none focus:border-orange-500" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} />
-                <button className="btn-outline border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black py-3 px-6 flex items-center gap-2">
-                  <ArrowDownRight className="w-4 h-4" /> WITHDRAW
+                <button onClick={() => genLayer.unstake('GLOBAL', parseInt(withdrawAmount))} className="btn-outline border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black py-3 px-6 flex items-center gap-2">
+                  <ArrowDownRight className="w-4 h-4" /> UNSTAKE
                 </button>
               </div>
             </div>
@@ -109,6 +109,24 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
               <button onClick={() => arbitrateDispute(arbitrateId)} className="bg-orange-900/30 text-orange-400 border border-orange-900 hover:bg-orange-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">TRIGGER AI ARBITRATION</button>
             </Magnetic>
           </div>
+        </div>
+      </div>
+
+      {/* KEEPER LIQUIDATION TERMINAL */}
+      <div className="brutalist-panel p-8 border border-purple-900/50 relative overflow-hidden mt-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-900/10 blur-[100px] rounded-full mix-blend-screen pointer-events-none" />
+        <h4 className="text-purple-500 text-2xl font-display uppercase tracking-widest mb-6">
+          Keeper Liquidation Terminal (Bounties)
+        </h4>
+        <p className="text-zinc-400 font-mono text-sm mb-6 max-w-2xl">
+          Scan the protocol for unhealthy loans. Trigger an AI re-evaluation of the borrower's social score and github metrics. If liquidated, earn a massive liquidation fee straight to your staking balance.
+        </p>
+
+        <div className="flex flex-col gap-4">
+          <input type="text" placeholder="Target Loan ID (e.g. APP-1)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-purple-500" value={(window as any).liqAppId || ''} onChange={e => (window as any).liqAppId = e.target.value} />
+          <Magnetic>
+            <button onClick={() => genLayer.aiLiquidate((window as any).liqAppId)} className="bg-purple-900/30 text-purple-400 border border-purple-900 hover:bg-purple-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">TRIGGER AI LIQUIDATION</button>
+          </Magnetic>
         </div>
       </div>
     </div>

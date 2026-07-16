@@ -328,6 +328,71 @@ class MacroFiLending(gl.Contract):
         app.status = "APPROVED"
         self.loan_applications[app_id] = app
         return True
+
+    @gl.public.write
+    def ai_liquidate(self, app_id: str) -> bool:
+        """
+        AI Liquidation Engine.
+        Any Keeper can call this to liquidate an unhealthy loan.
+        """
+        if app_id not in self.loan_applications:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Loan not found")
+        app = self.loan_applications[app_id]
+        if app.status != "APPROVED":
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Loan is not ACTIVE/APPROVED")
+            
+        borrower = app.borrower
+        gh_contribs = int(app.github_contributions)
+        dao_votes = int(app.dao_votes)
+        
+        def leader_fn() -> dict:
+            prompt = f"Evaluate the current health of this borrower to determine if their loan should be liquidated.\n"
+            prompt += f"<UNTRUSTED_DATA>\nBorrower: {borrower}\n</UNTRUSTED_DATA>\n"
+            prompt += f"Metrics: GitHub={gh_contribs}, DAO={dao_votes}\n"
+            prompt += "If the borrower has been flagged for a rug pull, lost their reputation, or their score drops below health threshold, liquidate them.\n"
+            prompt += "Return JSON exactly like: {'liquidate': true/false, 'reason': '<str>'}\n"
+            
+            analysis = gl.nondet.exec_prompt(prompt, response_format="json")
+            if isinstance(analysis, str):
+                import json
+                try: analysis = json.loads(analysis)
+                except: analysis = {"liquidate": False, "reason": "Parse error"}
+            return {
+                "liquidate": bool(analysis.get("liquidate", False)),
+                "reason": str(analysis.get("reason", ""))[:1024]
+            }
+            
+        def validator_fn(leader_res) -> bool:
+            if not isinstance(leader_res, gl.vm.Return): return False
+            data = leader_res.calldata
+            if not isinstance(data, dict): return False
+            return isinstance(data.get("liquidate"), bool)
+            
+        decision = gl.vm.run_nondet(leader_fn, validator_fn)
+        
+        if decision["liquidate"]:
+            app.status = "LIQUIDATED"
+            app.ai_notes = "LIQUIDATED BY KEEPER: " + decision["reason"]
+            self.loan_applications[app_id] = app
+            
+            # Slash trust score
+            if borrower in self.borrower_profiles:
+                prof = self.borrower_profiles[borrower]
+                prof.trust_score = u256(0)
+                self.borrower_profiles[borrower] = prof
+                
+            # Send liquidation bounty to keeper
+            keeper = str(gl.message.sender_address)
+            bounty = int(app.collateral) // 20  # 5% bounty
+            
+            if keeper in self.lenders:
+                self.lenders[keeper] = str(int(self.lenders[keeper]) + bounty)
+            else:
+                self.lenders[keeper] = str(bounty)
+                
+            return True
+            
+        return False
         
     @gl.public.write
     def link_socials(self, github_handle: str, twitter_handle: str) -> bool:
