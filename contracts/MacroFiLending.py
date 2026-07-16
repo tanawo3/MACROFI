@@ -131,6 +131,7 @@ class Proposal:
     votes_against: u256
     voters: str  # serialized JSON array of addresses
 
+@gl.evm.contract_interface
 class _NativeRecipient:
     class View:
         pass
@@ -319,7 +320,7 @@ class MacroFiLending(gl.Contract):
         if status == "REJECTED":
             app.status = "REJECTED"
             # Return collateral
-            gl.transfer(app.borrower, int(app.collateral))
+            _NativeRecipient(Address(app.borrower)).emit_transfer(value=app.collateral)
             app.collateral = u256(0)
         else:
             app.status = status # Either APPROVED or COUNTER_OFFER
@@ -591,7 +592,7 @@ class MacroFiLending(gl.Contract):
         debt = int(app.debt)
         if gl.message.value < debt:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Insufficient. Need {debt}")
-        gl.transfer(app.borrower, int(app.collateral))
+        _NativeRecipient(Address(app.borrower)).emit_transfer(value=app.collateral)
         app.status = "REPAID"
         app.debt = u256(0)
         self.loan_applications[app_id] = app
@@ -1064,15 +1065,7 @@ class MacroFiLending(gl.Contract):
         self.treasury = json.dumps(treasury)
         
         # Native transfer back to lender
-        recipient = gl.contract(sender, _NativeRecipient)
-        recipient.value = amount
-        # Hack to execute empty write method to trigger payable transfer
-        try:
-            # Not calling anything directly on recipient because it's empty, but we must call a dummy write method if it had one.
-            # However, GenVM Native transfers require this exact shape.
-            pass
-        except Exception:
-            pass
+        _NativeRecipient(Address(sender)).emit_transfer(value=amount)
 
     @gl.public.view
     def get_borrower_profile(self, wallet: str) -> str:
