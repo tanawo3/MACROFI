@@ -643,6 +643,26 @@ class MacroFiLending(gl.Contract):
                 prof.total_loans_repaid = u256(int(prof.total_loans_repaid) + 1)
                 if is_late:
                     prof.late_repayments = u256(int(prof.late_repayments) + 1)
+                    
+                def leader_fn() -> dict:
+                    prompt = f"Borrower {borrower} just repaid a loan. Late={is_late}. "
+                    prompt += f"Total repaid: {int(prof.total_loans_repaid)}, Late: {int(prof.late_repayments)}. "
+                    prompt += f"Current Trust Score: {int(prof.trust_score)}. Adjust trust score up for good repayment or down for late."
+                    prompt += "Return JSON: {'new_trust_score': <int 0-10000>}"
+                    analysis = gl.nondet.exec_prompt(prompt, response_format="json")
+                    if isinstance(analysis, str):
+                        import json
+                        try: analysis = json.loads(analysis)
+                        except: analysis = {"new_trust_score": int(prof.trust_score)}
+                    return {"new_trust_score": int(analysis.get("new_trust_score", int(prof.trust_score)))}
+                    
+                def validator_fn(leader_res) -> bool:
+                    if not isinstance(leader_res, gl.vm.Return): return False
+                    data = leader_res.calldata
+                    return isinstance(data, dict) and isinstance(data.get("new_trust_score"), int)
+                    
+                decision = gl.vm.run_nondet(leader_fn, validator_fn)
+                prof.trust_score = u256(max(0, min(10000, decision["new_trust_score"])))
                 self.borrower_profiles[borrower] = prof
         else:
             # Partial repayment
@@ -666,29 +686,6 @@ class MacroFiLending(gl.Contract):
         _NativeRecipient(Address(app.borrower)).emit_transfer(value=app.collateral)
         app.collateral = u256(0)
         self.loan_applications[app_id] = app
-        return True
-                
-            def leader_fn() -> dict:
-                prompt = f"Borrower {borrower} just repaid a loan. Late={is_late}. "
-                prompt += f"Total repaid: {int(prof.total_loans_repaid)}, Late: {int(prof.late_repayments)}. "
-                prompt += f"Current Trust Score: {int(prof.trust_score)}. Adjust trust score up for good repayment or down for late."
-                prompt += "Return JSON: {'new_trust_score': <int 0-10000>}"
-                analysis = gl.nondet.exec_prompt(prompt, response_format="json")
-                if isinstance(analysis, str):
-                    import json
-                    try: analysis = json.loads(analysis)
-                    except: analysis = {"new_trust_score": int(prof.trust_score)}
-                return {"new_trust_score": int(analysis.get("new_trust_score", int(prof.trust_score)))}
-                
-            def validator_fn(leader_res) -> bool:
-                if not isinstance(leader_res, gl.vm.Return): return False
-                data = leader_res.calldata
-                return isinstance(data, dict) and isinstance(data.get("new_trust_score"), int)
-                
-            decision = gl.vm.run_nondet(leader_fn, validator_fn)
-            prof.trust_score = u256(max(0, min(10000, decision["new_trust_score"])))
-            self.borrower_profiles[borrower] = prof
-            
         return True
 
     @gl.public.view
