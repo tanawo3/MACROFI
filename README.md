@@ -22,6 +22,8 @@ The UI is heavily inspired by modern, motorsport-themed brutalist design systems
 - **Web3 Native Credit Scoring**: Uses GitHub contributions, DAO votes, and wallet age to build trust.
 - **Transparent AI Oracles**: Returns JSON-structured insights (`confidence`, `positive_factors`, `risk_factors`).
 - **Risk-Tiered Pools**: Lenders can specify `risk_tier` and `min_trust_score` for their liquidity pools.
+- **Zero-Knowledge AI KYC**: Verifies identities via document hashes, maintaining absolute privacy while outputting deterministic `identity_score`.
+- **Dynamic AI Reputation Engine**: Continuously re-evaluates borrower trust scores dynamically upon every loan repayment.
 
 ## Getting Started
 

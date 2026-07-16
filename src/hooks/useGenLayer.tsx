@@ -399,6 +399,26 @@ export const useGenLayer = () => {
       }
   };
 
+  const submitIdentityVerification = async (docType: string, docHash: string, selfieHash: string, poaHash: string) => {
+      if (!contractAddress) return;
+      setError(null);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'submit_identity_verification',
+              args: [docType, docHash, selfieHash, poaHash]
+          });
+          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+      } catch (e: any) {
+          setError("Failed to verify identity: " + (e?.message || ""));
+      }
+  };
+
   const acceptConditionalOffer = async (appId: string) => {
       if (!contractAddress) return;
       setError(null);
@@ -471,6 +491,7 @@ export const useGenLayer = () => {
     evaluateLoan,
     repayLoan,
     linkSocials,
+    submitIdentityVerification,
     acceptConditionalOffer,
     getBorrowerProfile,
     getAllLoans,

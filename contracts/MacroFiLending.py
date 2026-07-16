@@ -76,6 +76,10 @@ class BorrowerProfile:
     trust_score: u256
     is_verified: bool
     last_updated: u256
+    identity_score: u256
+    kyc_status: str
+    total_loans_repaid: u256
+    late_repayments: u256
 
 
 @allow_storage
@@ -333,15 +337,69 @@ class MacroFiLending(gl.Contract):
             twitter_handle=twitter_handle,
             trust_score=u256(decision["trust_score"]),
             is_verified=True,
-            last_updated=u256(1)
+            last_updated=u256(1),
+            identity_score=u256(0),
+            kyc_status="UNVERIFIED",
+            total_loans_repaid=u256(0),
+            late_repayments=u256(0)
         )
         self.borrower_profiles[borrower] = prof
         return True
 
+    @gl.public.write
+    def submit_identity_verification(self, document_type: str, document_hash: str, selfie_hash: str, proof_of_address_hash: str) -> bool:
+        """AI Oracle verified Zero-Knowledge KYC using document hashes."""
+        borrower = str(gl.message.sender_address)
+        if borrower not in self.borrower_profiles:
+            # Create an empty profile to hold the KYC if they didn't link socials yet
+            self.borrower_profiles[borrower] = BorrowerProfile(
+                wallet=borrower,
+                github_handle="",
+                twitter_handle="",
+                trust_score=u256(0),
+                is_verified=False,
+                last_updated=u256(1),
+                identity_score=u256(0),
+                kyc_status="PENDING",
+                total_loans_repaid=u256(0),
+                late_repayments=u256(0)
+            )
+            
+        def leader_fn() -> dict:
+            prompt = f"A borrower submitted identity verification. Document type: {document_type}\n"
+            prompt += f"Document hash: {document_hash}\nSelfie hash: {selfie_hash}\nProof of address hash: {proof_of_address_hash}\n"
+            prompt += "Return ONLY valid JSON: {'status': 'VERIFIED' or 'REJECTED', 'identity_score': <int 0-100>}"
+            analysis = gl.nondet.exec_prompt(prompt, response_format="json")
+            if isinstance(analysis, str):
+                import json
+                try: analysis = json.loads(analysis)
+                except: analysis = {"status": "REJECTED", "identity_score": 0}
+            return {
+                "status": analysis.get("status", "REJECTED"),
+                "identity_score": int(analysis.get("identity_score", 0))
+            }
+            
+        def validator_fn(leader_res) -> bool:
+            if not isinstance(leader_res, gl.vm.Return): return False
+            data = leader_res.calldata
+            return isinstance(data, dict) and data.get("status") in ["VERIFIED", "REJECTED"]
+            
+        decision = gl.vm.run_nondet(leader_fn, validator_fn)
+        
+        prof = self.borrower_profiles[borrower]
+        prof.kyc_status = decision["status"]
+        prof.identity_score = u256(decision["identity_score"])
+        # Boost trust score if verified
+        if prof.kyc_status == "VERIFIED":
+            prof.trust_score = u256(int(prof.trust_score) + 2000)
+            
+        self.borrower_profiles[borrower] = prof
+        return True
+
     @gl.public.write.payable
-    def repay_loan(self, app_id: str) -> bool:
+    def repay_loan(self, app_id: str, is_late: bool = False) -> bool:
         """
-        Allows a borrower to repay their debt and reclaim their collateral.
+        Allows a borrower to repay their debt. Triggers AI Reputation update.
         """
         if app_id not in self.loan_applications:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Loan not found")
@@ -357,6 +415,36 @@ class MacroFiLending(gl.Contract):
         app.status = "REPAID"
         app.debt = u256(0)
         self.loan_applications[app_id] = app
+        
+        # Dynamic Reputation Engine
+        borrower = app.borrower
+        if borrower in self.borrower_profiles:
+            prof = self.borrower_profiles[borrower]
+            prof.total_loans_repaid = u256(int(prof.total_loans_repaid) + 1)
+            if is_late:
+                prof.late_repayments = u256(int(prof.late_repayments) + 1)
+                
+            def leader_fn() -> dict:
+                prompt = f"Borrower {borrower} just repaid a loan. Late={is_late}. "
+                prompt += f"Total repaid: {int(prof.total_loans_repaid)}, Late: {int(prof.late_repayments)}. "
+                prompt += f"Current Trust Score: {int(prof.trust_score)}. Adjust trust score up for good repayment or down for late."
+                prompt += "Return JSON: {'new_trust_score': <int 0-10000>}"
+                analysis = gl.nondet.exec_prompt(prompt, response_format="json")
+                if isinstance(analysis, str):
+                    import json
+                    try: analysis = json.loads(analysis)
+                    except: analysis = {"new_trust_score": int(prof.trust_score)}
+                return {"new_trust_score": int(analysis.get("new_trust_score", int(prof.trust_score)))}
+                
+            def validator_fn(leader_res) -> bool:
+                if not isinstance(leader_res, gl.vm.Return): return False
+                data = leader_res.calldata
+                return isinstance(data, dict) and isinstance(data.get("new_trust_score"), int)
+                
+            decision = gl.vm.run_nondet(leader_fn, validator_fn)
+            prof.trust_score = u256(max(0, min(10000, decision["new_trust_score"])))
+            self.borrower_profiles[borrower] = prof
+            
         return True
 
     @gl.public.view

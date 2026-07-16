@@ -42,3 +42,24 @@ def test_macrofi_credlayer_features(genlayer_mock):
     assert loan["confidence"] == 85
     assert len(loan["positive_factors"]) == 2
     assert len(loan["risk_factors"]) == 1
+
+    # 5. Test AI Identity Verification (KYC)
+    genlayer_mock.msg.sender = "0xBorrower2"
+    genlayer_mock.providers.exec_prompt.set_return('{"status": "VERIFIED", "identity_score": 95}')
+    contract.submit_identity_verification("PASSPORT", "hash1", "hash2", "hash3")
+    
+    # 6. Test AI Reputation Tracking on Repayment
+    genlayer_mock.msg.sender = "0xBorrower"
+    # Ensure they have a loan approved
+    genlayer_mock.providers.exec_prompt.set_return('{"status": "APPROVED", "collateral_ratio_bps": 15000, "confidence": 90}')
+    contract.evaluate_loan(app_id)
+    
+    # Accept if counter offer or approved
+    loan2 = contract.get_all_loans()[0]
+    if loan2["status"] == "COUNTER_OFFER":
+        contract.accept_conditional_offer(app_id)
+        
+    loan_debt = contract.loan_applications[app_id].debt
+    genlayer_mock.msg.value = loan_debt
+    genlayer_mock.providers.exec_prompt.set_return('{"new_trust_score": 5500}')
+    contract.repay_loan(app_id, False)

@@ -26,6 +26,9 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
   const [daoVotes, setDaoVotes] = useState('');
   const [walletAgeDays, setWalletAgeDays] = useState('');
   const [collat, setCollat] = useState('');
+  const [docHash, setDocHash] = useState('');
+  const [selfieHash, setSelfieHash] = useState('');
+  const [poaHash, setPoaHash] = useState('');
   
   const loadData = async () => {
     if (address) {
@@ -55,11 +58,16 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
             <Shield className="w-6 h-6" /> TRUST PROFILE
           </h4>
           
-          {profile && profile.is_verified ? (
+          {profile && (profile.is_verified || profile.kyc_status === 'VERIFIED') ? (
             <div className="flex flex-col gap-4">
               <div className="bg-black p-4 border border-[var(--text-lime)] flex justify-between items-center">
                 <span className="font-mono text-zinc-500 uppercase">Trust Score</span>
                 <span className="text-3xl font-bold text-[var(--text-lime)]">{profile.trust_score}</span>
+              </div>
+              <div className="flex flex-col gap-1 mb-2">
+                <span className="text-xs text-zinc-500 font-mono uppercase">Repayment Engine</span>
+                <span className="text-sm font-mono text-white">Total Repaid: {profile.total_loans_repaid || 0}</span>
+                <span className="text-sm font-mono text-white">Late Repayments: {profile.late_repayments || 0}</span>
               </div>
               <div className="flex items-center gap-2 text-zinc-400 font-mono text-sm">
                 <Github className="w-4 h-4" /> {profile.github_handle || 'Not Linked'}
@@ -74,8 +82,21 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
               <input type="text" placeholder="GitHub Username" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={github} onChange={e => setGithub(e.target.value)} />
               <input type="text" placeholder="Twitter Username" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={twitter} onChange={e => setTwitter(e.target.value)} />
               <Magnetic>
-                <button onClick={() => linkSocials(github, twitter)} className="btn-outline w-full py-3 mt-2">LINK ACCOUNTS</button>
+                <button onClick={() => genLayer.linkSocials(github, twitter)} className="btn-outline w-full py-3 mt-2">LINK ACCOUNTS</button>
               </Magnetic>
+              
+              <div className="border-t border-zinc-800 my-2 pt-4">
+                <h5 className="text-[var(--text-lime)] text-lg font-display uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <ShieldAlert className="w-5 h-5" /> ZERO-KNOWLEDGE KYC
+                </h5>
+                <p className="text-xs text-zinc-400 mb-4">Submit hashes of your identity documents for AI verification. Your original files never leave your device.</p>
+                <input type="text" placeholder="ID Document Hash" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] w-full mb-2" value={docHash} onChange={e => setDocHash(e.target.value)} />
+                <input type="text" placeholder="Selfie Hash" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] w-full mb-2" value={selfieHash} onChange={e => setSelfieHash(e.target.value)} />
+                <input type="text" placeholder="Proof of Address Hash" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] w-full mb-2" value={poaHash} onChange={e => setPoaHash(e.target.value)} />
+                <Magnetic>
+                  <button onClick={() => genLayer.submitIdentityVerification('PASSPORT', docHash, selfieHash, poaHash)} className="bg-zinc-800 text-white font-mono hover:bg-[var(--text-lime)] hover:text-black transition-colors w-full py-3 mt-2 border border-zinc-700 hover:border-[var(--text-lime)]">SUBMIT KYC HASHES</button>
+                </Magnetic>
+              </div>
             </div>
           )}
         </div>
@@ -161,9 +182,12 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
                 </button>
               )}
               {loan.status === 'APPROVED' && loan.debt !== '0' && (
-                <button onClick={() => repayLoan(loan.app_id, parseInt(loan.debt))} className="btn-outline border-[var(--text-lime)] text-[var(--text-lime)] py-2 px-4 text-sm">
-                  REPAY LOAN
-                </button>
+                <div className="flex flex-col gap-2 w-full">
+                    <button onClick={() => genLayer.repayLoan(loan.app_id, parseInt(loan.debt))} className="btn-outline border-[var(--text-lime)] text-[var(--text-lime)] py-2 px-4 text-sm w-full">
+                    REPAY LOAN
+                    </button>
+                    <p className="text-[10px] text-zinc-500 font-mono text-center">Repayment behavior dynamically updates your AI Trust Score.</p>
+                </div>
               )}
             </div>
           </div>
