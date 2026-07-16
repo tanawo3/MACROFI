@@ -84,21 +84,22 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
               <Magnetic>
                 <button onClick={async () => { await genLayer.linkSocials(github, twitter); await loadData(); }} className="btn-outline w-full py-3 mt-2">LINK ACCOUNTS</button>
               </Magnetic>
-              
-              <div className="border-t border-zinc-800 my-2 pt-4">
-                <h5 className="text-[var(--text-lime)] text-lg font-display uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <ShieldAlert className="w-5 h-5" /> ZERO-KNOWLEDGE KYC
-                </h5>
-                <p className="text-xs text-zinc-400 mb-4">Submit hashes of your identity documents for AI verification. Your original files never leave your device.</p>
-                <input type="text" placeholder="ID Document Hash" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] w-full mb-2" value={docHash} onChange={e => setDocHash(e.target.value)} />
-                <input type="text" placeholder="Selfie Hash" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] w-full mb-2" value={selfieHash} onChange={e => setSelfieHash(e.target.value)} />
-                <input type="text" placeholder="Proof of Address Hash" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] w-full mb-2" value={poaHash} onChange={e => setPoaHash(e.target.value)} />
-                <Magnetic>
-                  <button onClick={() => genLayer.submitIdentityVerification('PASSPORT', docHash, selfieHash, poaHash)} className="bg-zinc-800 text-white font-mono hover:bg-[var(--text-lime)] hover:text-black transition-colors w-full py-3 mt-2 border border-zinc-700 hover:border-[var(--text-lime)]">SUBMIT KYC HASHES</button>
-                </Magnetic>
-              </div>
             </div>
           )}
+          
+          {/* ZERO-KNOWLEDGE KYC — Always visible */}
+          <div className="border-t border-zinc-800 my-4 pt-4">
+            <h5 className="text-[var(--text-lime)] text-lg font-display uppercase tracking-widest mb-2 flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5" /> ZERO-KNOWLEDGE KYC
+            </h5>
+            <p className="text-xs text-zinc-400 mb-4">Submit hashes of your identity documents for AI verification. Your original files never leave your device. Boosts Trust Score by +2000.</p>
+            <input type="text" placeholder="ID Document Hash" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] w-full mb-2" value={docHash} onChange={e => setDocHash(e.target.value)} />
+            <input type="text" placeholder="Selfie Hash" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] w-full mb-2" value={selfieHash} onChange={e => setSelfieHash(e.target.value)} />
+            <input type="text" placeholder="Proof of Address Hash" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] w-full mb-2" value={poaHash} onChange={e => setPoaHash(e.target.value)} />
+            <Magnetic>
+              <button onClick={() => genLayer.submitIdentityVerification('PASSPORT', docHash, selfieHash, poaHash)} className="bg-zinc-800 text-white font-mono hover:bg-[var(--text-lime)] hover:text-black transition-colors w-full py-3 mt-2 border border-zinc-700 hover:border-[var(--text-lime)]">SUBMIT KYC HASHES</button>
+            </Magnetic>
+          </div>
         </div>
 
         {/* Apply for Loan Panel */}
