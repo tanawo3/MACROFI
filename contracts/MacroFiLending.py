@@ -375,8 +375,8 @@ class MacroFiLending(gl.Contract):
         app = self.loan_applications[app_id]
         if str(gl.message.sender_address) != app.borrower:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Unauthorized")
-        if app.status != "CONDITIONAL_OFFER":
-            raise gl.vm.UserError(f"{ERROR_EXPECTED} No conditional offer exists")
+        if app.status != "COUNTER_OFFER":
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} No counter offer exists")
             
         treasury = json.loads(self.treasury)
         debt_amount = int(app.debt)
