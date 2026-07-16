@@ -63,3 +63,48 @@ def test_macrofi_credlayer_features(genlayer_mock):
     genlayer_mock.msg.value = loan_debt
     genlayer_mock.providers.exec_prompt.set_return('{"new_trust_score": 5500}')
     contract.repay_loan(app_id, False)
+
+def test_macrofi_arbitration(genlayer_mock):
+    contract = genlayer_mock.deploy_contract("MacroFiLending")
+    
+    # 1. Setup Borrower
+    genlayer_mock.set_sender("0xBorrower")
+    contract.link_socials("rugpuller", "rugpuller_x")
+    contract.submit_identity_verification("PASSPORT", "hash1", "hash2", "hash3")
+    
+    # 2. Setup Loan
+    contract.apply_for_loan("GLOBAL", "Building a great DAO.", 100, 5, 365)
+    
+    # 3. Raise Dispute
+    genlayer_mock.set_sender("0xLender")
+    dispute_id = contract.raise_dispute("APP-1", "Borrower rugged the DAO", "https://twitter.com/rugpuller_x/status/123")
+    
+    # 4. Mock AI Arbitration
+    def mock_ai(*args, **kwargs):
+        if "Arbitrator" in args[0]:
+            return '{"is_fault": true, "confidence": 95, "notes": "Confirmed rug pull via Twitter link"}'
+        return '{"status": "APPROVED", "collateral_ratio_bps": 8000, "reason": "Ok", "confidence": 90, "positive_factors": [], "risk_factors": []}'
+    
+    genlayer_mock.set_mock_oracle(mock_ai)
+    
+    contract.arbitrate_dispute(dispute_id)
+    
+    # Verify Slashing
+    prof = contract.get_borrower_profile("0xBorrower")
+    assert '"trust_score": 0' in prof, "Borrower trust score should be slashed to 0"
+    
+    # Verify Loan Status
+    assert contract.disputes[dispute_id].status == "RESOLVED"
+    assert contract.disputes[dispute_id].is_fault == True
+
+
+if __name__ == '__main__':
+    class MockGenLayer:
+        def deploy_contract(self, name):
+            from contracts.MacroFiLending import MacroFiLending
+            return MacroFiLending()
+        def set_sender(self, sender): pass
+        def set_mock_oracle(self, fn): pass
+    test_macrofi_credlayer_features(MockGenLayer())
+    test_macrofi_arbitration(MockGenLayer())
+    print('Tests conceptually passed.')
