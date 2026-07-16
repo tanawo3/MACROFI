@@ -1081,6 +1081,22 @@ class MacroFiLending(gl.Contract):
             'late_repayments': int(p.late_repayments)
         })
 
+    @gl.public.view
+    def get_my_profile(self) -> str:
+        """Returns the caller's own borrower profile using their on-chain sender address."""
+        caller = str(gl.message.sender_address)
+        if caller not in self.borrower_profiles: return '{}'
+        p = self.borrower_profiles[caller]
+        return json.dumps({
+            'wallet': p.wallet, 
+            'github_handle': p.github_handle, 
+            'twitter_handle': p.twitter_handle, 
+            'trust_score': int(p.trust_score), 
+            'is_verified': p.is_verified,
+            'total_loans_repaid': int(p.total_loans_repaid),
+            'late_repayments': int(p.late_repayments)
+        })
+
     # =========================================================================
     # AI ARBITRATION (DISPUTE RESOLUTION)
     # =========================================================================

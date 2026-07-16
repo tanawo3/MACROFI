@@ -447,10 +447,13 @@ export const useGenLayer = () => {
         const client = getGenLayerClient(network, address, provider);
         const result = await (client as any).readContract({
             address: contractAddress,
-            functionName: 'get_borrower_profile',
-            args: [walletAddr]
+            functionName: 'get_my_profile',
+            args: []
         });
-        if (result) return JSON.parse(result as string);
+        if (result) {
+          const parsed = JSON.parse(result as string);
+          if (parsed && Object.keys(parsed).length > 0 && parsed.wallet) return parsed;
+        }
       } catch (e: any) {
         console.error("Error fetching borrower profile", e);
       }
