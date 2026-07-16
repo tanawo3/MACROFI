@@ -1,6 +1,6 @@
 # MacroFi | GenLayer Lending Protocol
 
-MacroFi is a high-end, brutalist Web3 Decentralized Finance (DeFi) interface built on the GenLayer Network. The protocol utilizes subjective consensus to dynamically adjust interest rates based on macroeconomic conditions rather than static smart contract math.
+MacroFi is a high-end, brutalist Web3 Decentralized Finance (DeFi) interface built on the GenLayer Network. The protocol utilizes subjective consensus and **Web3 Native Credit Scoring** to dynamically adjust interest rates and evaluate under-collateralized loans based on real on-chain footprints.
 
 ## Aesthetic & Architecture
 The UI is heavily inspired by modern, motorsport-themed brutalist design systems (such as Studio Freight / Lando Norris). It features:
@@ -17,6 +17,11 @@ The UI is heavily inspired by modern, motorsport-themed brutalist design systems
 - Framer Motion
 - GenLayer Protocol (Intelligent Contracts)
 - Lucide React
+
+## Protocol Features
+- **Web3 Native Credit Scoring**: Uses GitHub contributions, DAO votes, and wallet age to build trust.
+- **Transparent AI Oracles**: Returns JSON-structured insights (`confidence`, `positive_factors`, `risk_factors`).
+- **Risk-Tiered Pools**: Lenders can specify `risk_tier` and `min_trust_score` for their liquidity pools.
 
 ## Getting Started
 
