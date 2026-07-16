@@ -1360,7 +1360,7 @@ def _deep_sanitize(text: str) -> str:
         text = re.sub(re.escape(phrase), "", text, flags=re.IGNORECASE)
     return text.replace("```", "EEE").strip()
 
-ALLOWED_HOSTS = ["www.federalreserve.gov", "www.ecb.europa.eu", "www.reuters.com"]
+ALLOWED_HOSTS = ["www.federalreserve.gov", "www.ecb.europa.eu", "www.reuters.com", "github.com", "twitter.com", "x.com"]
 CHALLENGE_MARKERS = ["cloudflare", "ddos protection", "are you human", "captcha"]
 
 def _fetch_url(url: str) -> str:
