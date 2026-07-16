@@ -21,6 +21,9 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
   const [loans, setLoans] = useState<any[]>([]);
   const [github, setGithub] = useState('');
   const [twitter, setTwitter] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [country, setCountry] = useState('');
+  const [occupation, setOccupation] = useState('');
   const [pitch, setPitch] = useState('');
   const [githubContribs, setGithubContribs] = useState('');
   const [daoVotes, setDaoVotes] = useState('');
@@ -73,6 +76,10 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
                 <span className="text-sm font-mono text-white">Total Repaid: {profile.total_loans_repaid || 0}</span>
                 <span className="text-sm font-mono text-white">Late Repayments: {profile.late_repayments || 0}</span>
               </div>
+              <div className="flex flex-col gap-1 mt-2 mb-2">
+                <span className="text-sm font-semibold text-white">{profile.full_name || 'Anonymous'}</span>
+                <span className="text-xs text-zinc-400">{profile.occupation || 'No Occupation'} • {profile.country || 'Unknown Country'}</span>
+              </div>
               <div className="flex items-center gap-2 text-zinc-400 font-mono text-sm">
                 <Github className="w-4 h-4" /> {profile.github_handle || 'Not Linked'}
               </div>
@@ -83,10 +90,15 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
           ) : (
             <div className="flex flex-col gap-4">
               <p className="text-sm text-zinc-400 mb-2">Link social accounts to unlock under-collateralized loans (up to 80% LTV) via AI verification.</p>
+              <input type="text" placeholder="Full Name" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={fullName} onChange={e => setFullName(e.target.value)} />
+              <div className="grid grid-cols-2 gap-2">
+                <input type="text" placeholder="Country" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={country} onChange={e => setCountry(e.target.value)} />
+                <input type="text" placeholder="Occupation" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={occupation} onChange={e => setOccupation(e.target.value)} />
+              </div>
               <input type="text" placeholder="GitHub Username" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={github} onChange={e => setGithub(e.target.value)} />
               <input type="text" placeholder="Twitter Username" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={twitter} onChange={e => setTwitter(e.target.value)} />
               <Magnetic>
-                <button onClick={async () => { await genLayer.linkSocials(github, twitter); await loadData(); }} className="btn-outline w-full py-3 mt-2">LINK ACCOUNTS</button>
+                <button onClick={async () => { await genLayer.linkSocials(fullName, country, occupation, github, twitter); await genLayer.fetchProtocolState(); }} className="btn-outline w-full py-3 mt-2">LINK ACCOUNTS</button>
               </Magnetic>
             </div>
           )}

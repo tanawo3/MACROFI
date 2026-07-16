@@ -380,7 +380,7 @@ export const useGenLayer = () => {
       }
   };
 
-  const linkSocials = async (github: string, twitter: string) => {
+  const linkSocials = async (fullName: string, country: string, occupation: string, github: string, twitter: string) => {
       if (!contractAddress) return;
       setError(null);
       try {
@@ -390,13 +390,14 @@ export const useGenLayer = () => {
               address: contractAddress,
               account: address ? { address } : undefined,
               functionName: 'link_socials',
-              args: [github, twitter]
+              args: [fullName, country, occupation, github, twitter],
           });
-          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          addTx({ hash, type: 'link_socials', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
-      } catch (e: any) {
-          setError("Failed to link socials: " + (e?.message || ""));
+          await fetchProtocolState();
+      } catch (err: any) {
+          setError(err.message || 'Failed to link socials');
       }
   };
 
