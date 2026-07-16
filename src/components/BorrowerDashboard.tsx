@@ -258,8 +258,29 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
           <Magnetic>
             <button onClick={() => genLayer.submitDefense(defenseId, defenseReason, defenseUrl)} className="bg-blue-900/30 text-blue-400 border border-blue-900 hover:bg-blue-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">SUBMIT DEFENSE</button>
           </Magnetic>
+          </div>
+
+          {genLayer.protocolState?.disputes && genLayer.protocolState.disputes.filter((d: any) => d.borrower.toLowerCase() === address.toLowerCase()).length > 0 && (
+            <div className="flex flex-col gap-4 mt-8 border-t border-zinc-800 pt-8">
+              <h5 className="text-[var(--text-main)] font-mono text-sm uppercase">Disputes Against You</h5>
+              {genLayer.protocolState.disputes.filter((d: any) => d.borrower.toLowerCase() === address.toLowerCase()).map((d: any) => (
+                <div key={d.dispute_id} className="bg-black/40 border border-zinc-800 p-4 font-mono text-sm">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-blue-500 font-bold">{d.dispute_id}</span>
+                    <span className={`px-2 py-1 text-xs ${d.status === 'PENDING' ? 'bg-orange-500/20 text-orange-400' : d.status === 'RESOLVED' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'}`}>{d.status}</span>
+                  </div>
+                  <p className="text-zinc-400 text-xs mb-1">Target: {d.app_id}</p>
+                  <p className="text-zinc-500 text-xs mb-3 line-clamp-2">Accusation: {d.reason}</p>
+                  {d.ai_notes && (
+                    <div className="bg-blue-900/10 border-l-2 border-blue-500 p-2 mt-2">
+                      <p className="text-blue-400/80 text-xs italic">AI Ruling: {d.ai_notes}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
 
       {/* AI VOUCHING / CREDIT DELEGATION CENTER */}
       <div className="brutalist-panel p-8 border border-purple-900/50 relative overflow-hidden mt-8">

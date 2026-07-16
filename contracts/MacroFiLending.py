@@ -816,13 +816,41 @@ class MacroFiLending(gl.Contract):
             
         treasury_data = json.loads(self.treasury) if hasattr(self, 'treasury') else {"total_deposited_wei": 0, "total_borrowed_wei": 0}
             
+        props = []
+        for prop in self.proposals.values():
+            props.append({
+                "proposal_id": prop.proposal_id,
+                "author": prop.author,
+                "title": prop.title,
+                "text": prop.text,
+                "status": prop.status,
+                "votes_yes": int(prop.votes_yes),
+                "votes_no": int(prop.votes_no),
+                "ai_notes": prop.ai_notes
+            })
+            
+        disps = []
+        for disp in self.disputes.values():
+            disps.append({
+                "dispute_id": disp.dispute_id,
+                "app_id": disp.app_id,
+                "lender": disp.lender,
+                "borrower": disp.borrower,
+                "reason": disp.reason,
+                "status": disp.status,
+                "resolution": disp.resolution,
+                "ai_notes": disp.ai_notes
+            })
+
         return json.dumps({
             "current_base_rate": int(p.current_base_rate_bps) / 100.0,
             "last_update_rationale": p.last_update_rationale,
             "update_counter": int(p.update_counter),
             "protocol_constitution": self.protocol_constitution,
             "logs": hist,
-            "treasury": treasury_data
+            "treasury": treasury_data,
+            "proposals": props,
+            "disputes": disps
         })
 
     @gl.public.write

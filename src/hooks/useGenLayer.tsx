@@ -20,6 +20,8 @@ export interface MacroFiState {
   logs: MacroFiLog[];
   myProfile?: any;
   treasury: { total_deposited_wei: number, total_borrowed_wei: number } | null;
+  proposals?: any[];
+  disputes?: any[];
 }
 
 export interface GenTx {
@@ -276,7 +278,9 @@ export const useGenLayer = () => {
             update_counter: parsed.update_counter || 0,
             protocol_constitution: parsed.protocol_constitution || "",
             logs: parsed.logs || [],
-            treasury: parsed.treasury || null
+            treasury: parsed.treasury || null,
+            proposals: parsed.proposals || [],
+            disputes: parsed.disputes || []
         }));
       } catch (parseErr: any) {
         setError("Failed to parse protocol state: " + parseErr.message);
@@ -290,7 +294,7 @@ export const useGenLayer = () => {
     const isNotFound = errorMsgLower.includes("not found") || errorMsgLower.includes("resource not found") || errorMsgLower.includes("404") || errorMsgLower.includes("no contract") || errorMsgLower.includes("execution failed") || errorMsgLower.includes("missing or invalid");
     if (isNotFound) {
       setError(`The active contract (${contractAddress}) was not found on ${networkName}. It might still be propagating on-chain, or it may belong to a different network. Please wait a few moments and try refreshing.`);
-      setProtocolState({ current_base_rate: 0, last_update_rationale: "", update_counter: 0, logs: [], treasury: null });
+      setProtocolState({ current_base_rate: 0, last_update_rationale: "", update_counter: 0, logs: [], treasury: null, proposals: [], disputes: [] });
     } else {
       let cleanError = errorMsg.replace(/^\[.*?\]\s*/, '');
       setError("Failed to fetch state from the active contract: " + cleanError);

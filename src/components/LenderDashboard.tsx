@@ -113,6 +113,27 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
               <button onClick={() => arbitrateDispute(arbitrateId)} className="bg-orange-900/30 text-orange-400 border border-orange-900 hover:bg-orange-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">TRIGGER AI ARBITRATION</button>
             </Magnetic>
           </div>
+          
+          {protocolState?.disputes && protocolState.disputes.length > 0 && (
+            <div className="flex flex-col gap-4 mt-8 border-t border-zinc-800 pt-8">
+              <h5 className="text-[var(--text-main)] font-mono text-sm uppercase">Active Disputes</h5>
+              {protocolState.disputes.map((d: any) => (
+                <div key={d.dispute_id} className="bg-black/40 border border-zinc-800 p-4 font-mono text-sm">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-orange-500 font-bold">{d.dispute_id}</span>
+                    <span className={`px-2 py-1 text-xs ${d.status === 'PENDING' ? 'bg-orange-500/20 text-orange-400' : d.status === 'RESOLVED' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'}`}>{d.status}</span>
+                  </div>
+                  <p className="text-zinc-400 text-xs mb-1">Target: {d.app_id}</p>
+                  <p className="text-zinc-500 text-xs mb-3 line-clamp-2">Reason: {d.reason}</p>
+                  {d.ai_notes && (
+                    <div className="bg-orange-900/10 border-l-2 border-orange-500 p-2 mt-2">
+                      <p className="text-orange-400/80 text-xs italic">AI Ruling: {d.ai_notes}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -169,6 +190,31 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
               <button onClick={() => genLayer.executeProposal(propId)} className="bg-zinc-900 text-zinc-400 border border-zinc-700 hover:bg-white hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">EXECUTE PROPOSAL</button>
             </Magnetic>
           </div>
+
+          {protocolState?.proposals && protocolState.proposals.length > 0 && (
+            <div className="flex flex-col gap-4 mt-8 border-t border-zinc-800 pt-8">
+              <h5 className="text-[var(--text-main)] font-mono text-sm uppercase">Active Proposals</h5>
+              {protocolState.proposals.map((p: any) => (
+                <div key={p.proposal_id} className="bg-black/40 border border-zinc-800 p-4 font-mono text-sm">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-emerald-500 font-bold">{p.proposal_id}</span>
+                    <span className={`px-2 py-1 text-xs ${p.status === 'ACTIVE' ? 'bg-emerald-500/20 text-emerald-400' : p.status === 'EXECUTED' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'}`}>{p.status}</span>
+                  </div>
+                  <h6 className="text-white font-bold mb-1">{p.title}</h6>
+                  <p className="text-zinc-500 text-xs mb-3 line-clamp-2">{p.text}</p>
+                  <div className="flex justify-between text-xs text-zinc-400 mb-2">
+                    <span>YES: {p.votes_yes}</span>
+                    <span>NO: {p.votes_no}</span>
+                  </div>
+                  {p.ai_notes && (
+                    <div className="bg-emerald-900/10 border-l-2 border-emerald-500 p-2 mt-2">
+                      <p className="text-emerald-400/80 text-xs italic">AI: {p.ai_notes}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
