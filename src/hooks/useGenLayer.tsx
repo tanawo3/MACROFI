@@ -318,7 +318,7 @@ export const useGenLayer = () => {
       }
   };
 
-  const applyForLoan = async (poolId: string, pitch: string, githubContributions: number, daoVotes: number, walletAgeDays: number, collateralAmount: number) => {
+  const applyForLoan = async (poolId: string, pitch: string, loanType: string, requestedAmount: number, durationDays: number, monthlyIncomeUsd: number, githubContributions: number, daoVotes: number, walletAgeDays: number, collateralAmount: number) => {
       if (!contractAddress) return;
       setError(null);
       try {
@@ -328,7 +328,7 @@ export const useGenLayer = () => {
               address: contractAddress,
               account: address ? { address } : undefined,
               functionName: 'apply_for_loan',
-              args: [poolId, pitch, githubContributions, daoVotes, walletAgeDays],
+              args: [poolId, pitch, loanType, requestedAmount, durationDays, monthlyIncomeUsd, githubContributions, daoVotes, walletAgeDays],
               value: BigInt(collateralAmount)
           });
           addTx({ hash, type: 'apply_loan', status: 'pending', timestamp: Date.now() });

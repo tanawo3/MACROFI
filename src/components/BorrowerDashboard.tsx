@@ -26,6 +26,10 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
   const [daoVotes, setDaoVotes] = useState('');
   const [walletAgeDays, setWalletAgeDays] = useState('');
   const [collat, setCollat] = useState('');
+  const [loanType, setLoanType] = useState('PERSONAL');
+  const [requestedAmount, setRequestedAmount] = useState('');
+  const [durationDays, setDurationDays] = useState('');
+  const [monthlyIncome, setMonthlyIncome] = useState('');
   const [docHash, setDocHash] = useState('');
   const [selfieHash, setSelfieHash] = useState('');
   const [poaHash, setPoaHash] = useState('');
@@ -108,7 +112,20 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
             <FileText className="w-6 h-6" /> NEW LOAN
           </h4>
           <div className="flex flex-col gap-4">
+            {/* Loan Type Selector */}
+            <select value={loanType} onChange={e => setLoanType(e.target.value)} className="bg-black border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] text-white font-mono uppercase">
+              <option value="PERSONAL">Personal Loan</option>
+              <option value="BUSINESS">Business Loan</option>
+              <option value="CREATOR">Creator Loan</option>
+              <option value="FREELANCER">Freelancer Loan</option>
+              <option value="DAO_CONTRIBUTOR">DAO Contributor Loan</option>
+            </select>
             <textarea placeholder="Describe your loan purpose..." rows={3} className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] resize-none" value={pitch} onChange={e => setPitch(e.target.value)} />
+            <div className="grid grid-cols-2 gap-2">
+              <input type="number" placeholder="Requested Amount (GEN)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] text-sm" value={requestedAmount} onChange={e => setRequestedAmount(e.target.value)} />
+              <input type="number" placeholder="Duration (Days)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] text-sm" value={durationDays} onChange={e => setDurationDays(e.target.value)} />
+            </div>
+            <input type="number" placeholder="Monthly Income (USD)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={monthlyIncome} onChange={e => setMonthlyIncome(e.target.value)} />
             <div className="grid grid-cols-3 gap-2">
               <input type="number" placeholder="GitHub Contribs" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] text-sm" value={githubContribs} onChange={e => setGithubContribs(e.target.value)} />
               <input type="number" placeholder="DAO Votes" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)] text-sm" value={daoVotes} onChange={e => setDaoVotes(e.target.value)} />
@@ -116,7 +133,7 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
             </div>
             <input type="number" placeholder="Collateral (GEN Wei)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-[var(--text-lime)]" value={collat} onChange={e => setCollat(e.target.value)} />
             <Magnetic>
-              <button onClick={() => applyForLoan('GLOBAL', pitch, parseInt(githubContribs||'0'), parseInt(daoVotes||'0'), parseInt(walletAgeDays||'0'), parseInt(collat||'0'))} className="btn-primary w-full py-3 mt-2">SUBMIT APPLICATION</button>
+              <button onClick={() => applyForLoan('GLOBAL', pitch, loanType, parseInt(requestedAmount||'0'), parseInt(durationDays||'30'), parseInt(monthlyIncome||'0'), parseInt(githubContribs||'0'), parseInt(daoVotes||'0'), parseInt(walletAgeDays||'0'), parseInt(collat||'0'))} className="btn-primary w-full py-3 mt-2">SUBMIT APPLICATION</button>
             </Magnetic>
           </div>
         </div>
