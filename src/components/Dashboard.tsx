@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown, Minus, Activity, Server, Radio, Crosshair, Re
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { SplitText } from './SplitText';
 import { Magnetic } from './Magnetic';
+import { BorrowerDashboard } from './BorrowerDashboard';
 
 export const Dashboard: React.FC<{ 
   genLayer: ReturnType<typeof useGenLayer>
@@ -152,6 +153,9 @@ export const Dashboard: React.FC<{
             )}
           </div>
         </div>
+
+        {/* Borrower Identity & Loan Section */}
+        <BorrowerDashboard genLayer={genLayer} />
       </div>
     </div>
   );

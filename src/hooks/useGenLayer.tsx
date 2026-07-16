@@ -379,6 +379,80 @@ export const useGenLayer = () => {
       }
   };
 
+  const linkSocials = async (github: string, twitter: string) => {
+      if (!contractAddress) return;
+      setError(null);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'link_socials',
+              args: [github, twitter]
+          });
+          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+      } catch (e: any) {
+          setError("Failed to link socials: " + (e?.message || ""));
+      }
+  };
+
+  const acceptConditionalOffer = async (appId: string) => {
+      if (!contractAddress) return;
+      setError(null);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'accept_conditional_offer',
+              args: [appId]
+          });
+          addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+      } catch (e: any) {
+          setError("Failed to accept offer: " + (e?.message || ""));
+      }
+  };
+
+  const getBorrowerProfile = async (walletAddr: string) => {
+      if (!contractAddress || contractAddress === "") return null;
+      try {
+        const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+        const client = getGenLayerClient(network, address, provider);
+        const result = await (client as any).readContract({
+            address: contractAddress,
+            functionName: 'get_borrower_profile',
+            args: [walletAddr]
+        });
+        if (result) return JSON.parse(result as string);
+      } catch (e: any) {
+        console.error("Error fetching borrower profile", e);
+      }
+      return null;
+  };
+
+  const getAllLoans = async () => {
+      if (!contractAddress || contractAddress === "") return [];
+      try {
+        const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+        const client = getGenLayerClient(network, address, provider);
+        const result = await (client as any).readContract({
+            address: contractAddress,
+            functionName: 'get_all_loans',
+            args: []
+        });
+        if (result) return JSON.parse(result as string);
+      } catch (e: any) {
+        console.error("Error fetching loans", e);
+      }
+      return [];
+  };
+
   return {
     address,
     isConnected,
@@ -396,6 +470,10 @@ export const useGenLayer = () => {
     applyForLoan,
     evaluateLoan,
     repayLoan,
+    linkSocials,
+    acceptConditionalOffer,
+    getBorrowerProfile,
+    getAllLoans,
     network,
     setNetwork,
     networkName,
