@@ -123,9 +123,9 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
         </p>
 
         <div className="flex flex-col gap-4">
-          <input type="text" placeholder="Target Loan ID (e.g. APP-1)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-purple-500" value={(window as any).liqAppId || ''} onChange={e => (window as any).liqAppId = e.target.value} />
+          <input type="text" placeholder="Target Loan ID (e.g. APP-1)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-purple-500" value={liqAppId} onChange={e => setLiqAppId(e.target.value)} />
           <Magnetic>
-            <button onClick={() => genLayer.aiLiquidate((window as any).liqAppId)} className="bg-purple-900/30 text-purple-400 border border-purple-900 hover:bg-purple-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">TRIGGER AI LIQUIDATION</button>
+            <button onClick={() => genLayer.aiLiquidate(liqAppId)} className="bg-purple-900/30 text-purple-400 border border-purple-900 hover:bg-purple-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">TRIGGER AI LIQUIDATION</button>
           </Magnetic>
         </div>
       </div>
@@ -143,26 +143,26 @@ export const LenderDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLayer
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="flex flex-col gap-4">
             <h5 className="text-[var(--text-main)] font-mono text-sm uppercase">Submit Proposal</h5>
-            <input type="text" placeholder="Title (e.g. Decrease global interest to 3%)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-emerald-500" value={(window as any).propTitle || ''} onChange={e => (window as any).propTitle = e.target.value} />
-            <textarea placeholder="New Constitution Text..." className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-emerald-500 min-h-[100px]" value={(window as any).propConst || ''} onChange={e => (window as any).propConst = e.target.value} />
+            <input type="text" placeholder="Title (e.g. Decrease global interest to 3%)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-emerald-500" value={propTitle} onChange={e => setPropTitle(e.target.value)} />
+            <textarea placeholder="New Constitution Text..." className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-emerald-500 min-h-[100px]" value={propConst} onChange={e => setPropConst(e.target.value)} />
             <Magnetic>
-              <button onClick={() => genLayer.submitProposal((window as any).propTitle, (window as any).propConst)} className="bg-emerald-900/30 text-emerald-400 border border-emerald-900 hover:bg-emerald-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">SUBMIT PROPOSAL</button>
+              <button onClick={() => genLayer.submitProposal(propTitle, propConst)} className="bg-emerald-900/30 text-emerald-400 border border-emerald-900 hover:bg-emerald-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">SUBMIT PROPOSAL</button>
             </Magnetic>
           </div>
 
           <div className="flex flex-col gap-4">
             <h5 className="text-[var(--text-main)] font-mono text-sm uppercase">Vote & Execute</h5>
-            <input type="text" placeholder="Proposal ID (e.g. PROP-1)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-emerald-500" value={(window as any).propId || ''} onChange={e => (window as any).propId = e.target.value} />
+            <input type="text" placeholder="Proposal ID (e.g. PROP-1)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-emerald-500" value={propId} onChange={e => setPropId(e.target.value)} />
             <div className="grid grid-cols-2 gap-2">
               <Magnetic>
-                <button onClick={() => genLayer.voteProposal((window as any).propId, true)} className="bg-green-900/30 text-green-400 border border-green-900 hover:bg-green-500 hover:text-black transition-colors w-full py-3 font-mono uppercase tracking-widest">VOTE YES</button>
+                <button onClick={() => genLayer.voteProposal(propId, true)} className="bg-green-900/30 text-green-400 border border-green-900 hover:bg-green-500 hover:text-black transition-colors w-full py-3 font-mono uppercase tracking-widest">VOTE YES</button>
               </Magnetic>
               <Magnetic>
-                <button onClick={() => genLayer.voteProposal((window as any).propId, false)} className="bg-red-900/30 text-red-400 border border-red-900 hover:bg-red-500 hover:text-black transition-colors w-full py-3 font-mono uppercase tracking-widest">VOTE NO</button>
+                <button onClick={() => genLayer.voteProposal(propId, false)} className="bg-red-900/30 text-red-400 border border-red-900 hover:bg-red-500 hover:text-black transition-colors w-full py-3 font-mono uppercase tracking-widest">VOTE NO</button>
               </Magnetic>
             </div>
             <Magnetic>
-              <button onClick={() => genLayer.executeProposal((window as any).propId)} className="bg-zinc-900 text-zinc-400 border border-zinc-700 hover:bg-white hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">EXECUTE PROPOSAL</button>
+              <button onClick={() => genLayer.executeProposal(propId)} className="bg-zinc-900 text-zinc-400 border border-zinc-700 hover:bg-white hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">EXECUTE PROPOSAL</button>
             </Magnetic>
           </div>
         </div>

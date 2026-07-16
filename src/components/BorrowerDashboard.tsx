@@ -247,11 +247,11 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
         </p>
 
         <div className="flex flex-col gap-4">
-          <input type="text" placeholder="Dispute ID (e.g. DISPUTE-1)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-blue-500" value={(window as any).defenseId || ''} onChange={e => (window as any).defenseId = e.target.value} />
-          <input type="text" placeholder="Your Defense (e.g. I did not rug, the market crashed)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-blue-500" value={(window as any).defenseReason || ''} onChange={e => (window as any).defenseReason = e.target.value} />
-          <input type="text" placeholder="Evidence URL (GitHub/Twitter proof)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-blue-500" value={(window as any).defenseUrl || ''} onChange={e => (window as any).defenseUrl = e.target.value} />
+          <input type="text" placeholder="Dispute ID (e.g. DISPUTE-1)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-blue-500" value={defenseId} onChange={e => setDefenseId(e.target.value)} />
+          <input type="text" placeholder="Your Defense (e.g. I did not rug, the market crashed)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-blue-500" value={defenseReason} onChange={e => setDefenseReason(e.target.value)} />
+          <input type="text" placeholder="Evidence URL (GitHub/Twitter proof)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-blue-500" value={defenseUrl} onChange={e => setDefenseUrl(e.target.value)} />
           <Magnetic>
-            <button onClick={() => genLayer.submitDefense((window as any).defenseId, (window as any).defenseReason, (window as any).defenseUrl)} className="bg-blue-900/30 text-blue-400 border border-blue-900 hover:bg-blue-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">SUBMIT DEFENSE</button>
+            <button onClick={() => genLayer.submitDefense(defenseId, defenseReason, defenseUrl)} className="bg-blue-900/30 text-blue-400 border border-blue-900 hover:bg-blue-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">SUBMIT DEFENSE</button>
           </Magnetic>
         </div>
       </div>
@@ -274,11 +274,11 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
               "{profile.ai_vouch_notes}"
             </div>
           )}
-          <input type="text" placeholder="Borrower Address (0x...)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-purple-500 font-mono" value={(window as any).vouchBorrower || ''} onChange={e => (window as any).vouchBorrower = e.target.value} />
-          <textarea placeholder="Evidence (e.g. We built an AI protocol together, here is the repo URL...)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-purple-500 min-h-[100px]" value={(window as any).vouchEvidence || ''} onChange={e => (window as any).vouchEvidence = e.target.value} />
+          <input type="text" placeholder="Borrower Address (0x...)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-purple-500 font-mono" value={vouchBorrower} onChange={e => setVouchBorrower(e.target.value)} />
+          <textarea placeholder="Evidence (e.g. We built an AI protocol together, here is the repo URL...)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-purple-500 min-h-[100px]" value={vouchEvidence} onChange={e => setVouchEvidence(e.target.value)} />
           
           <Magnetic>
-            <button onClick={() => genLayer.aiVouch((window as any).vouchBorrower, (window as any).vouchEvidence)} className="bg-purple-900/30 text-purple-400 border border-purple-900 hover:bg-purple-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">SUBMIT AI VOUCH</button>
+            <button onClick={() => genLayer.aiVouch(vouchBorrower, vouchEvidence)} className="bg-purple-900/30 text-purple-400 border border-purple-900 hover:bg-purple-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">SUBMIT AI VOUCH</button>
           </Magnetic>
         </div>
       </div>

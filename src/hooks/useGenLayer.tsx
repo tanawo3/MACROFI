@@ -210,6 +210,7 @@ export const useGenLayer = () => {
           setContractAddress(deployedAddress);
           localStorage.setItem('MACROFI_CONTRACT_ADDRESS_V2', deployedAddress);
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } else {
           updateTxStatus(hash, 'failed', 'Receipt did not contain contractAddress');
           setError("Smart contract deployment did not return a valid address. Check explorer or transaction status.");
@@ -350,6 +351,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'apply_loan', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to apply for loan: " + (e?.message || ""));
       }
@@ -370,6 +372,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'evaluate_loan', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to evaluate loan: " + (e?.message || ""));
       }
@@ -454,6 +457,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to verify identity: " + (e?.message || ""));
       }
@@ -474,6 +478,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to accept offer: " + (e?.message || ""));
       }
@@ -532,6 +537,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Arbitration failed: " + (e?.message || ""));
       } finally {
@@ -554,6 +560,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to raise dispute: " + (e?.message || ""));
       }
@@ -574,6 +581,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to submit defense: " + (e?.message || ""));
       }
@@ -594,6 +602,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to submit proposal: " + (e?.message || ""));
       }
@@ -614,6 +623,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to vote: " + (e?.message || ""));
       }
@@ -634,6 +644,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'deploy', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to execute proposal: " + (e?.message || ""));
       }
@@ -658,6 +669,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'evaluate_loan', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to liquidate: " + (e?.message || ""));
       }
@@ -677,6 +689,7 @@ export const useGenLayer = () => {
           addTx({ hash, type: 'evaluate_loan', status: 'pending', timestamp: Date.now() });
           await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
           updateTxStatus(hash, 'success');
+          await fetchProtocolState();
       } catch (e: any) {
           setError("Failed to vouch: " + (e?.message || ""));
       }
