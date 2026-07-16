@@ -1148,7 +1148,8 @@ class MacroFiLending(gl.Contract):
             'trust_score': int(p.trust_score), 
             'is_verified': p.is_verified,
             'total_loans_repaid': int(p.total_loans_repaid),
-            'late_repayments': int(p.late_repayments)
+            'late_repayments': int(p.late_repayments),
+            'ai_vouch_notes': p.ai_vouch_notes
         })
 
     @gl.public.view
@@ -1167,7 +1168,8 @@ class MacroFiLending(gl.Contract):
             'trust_score': int(p.trust_score), 
             'is_verified': p.is_verified,
             'total_loans_repaid': int(p.total_loans_repaid),
-            'late_repayments': int(p.late_repayments)
+            'late_repayments': int(p.late_repayments),
+            'ai_vouch_notes': p.ai_vouch_notes
         })
 
     # =========================================================================
