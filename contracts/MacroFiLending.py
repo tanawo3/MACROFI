@@ -90,12 +90,6 @@ class LoanApplication:
     debt: u256
     created_at: u256
 
-class _NativeRecipient:
-    class View:
-        pass
-    class Write:
-        pass
-
 class MacroFiLending(gl.Contract):
     """
     MacroFi Enterprise Protocol.
@@ -689,14 +683,13 @@ class MacroFiLending(gl.Contract):
             "interest_rate_bps": 500
         })
 
-    @gl.public.write.payable
-    def deposit_liquidity(self, pool_id: str) -> None:
+    @gl.public.write
+    def deposit_liquidity(self, pool_id: str, amount: int) -> None:
         if pool_id not in self.liquidity_pools:
             raise Exception(f"{ERROR_EXPECTED} Pool not found")
         
-        amount = int(gl.message.value)
         if amount <= 0:
-            raise Exception(f"{ERROR_EXPECTED} Must send GEN tokens to deposit")
+            raise Exception(f"{ERROR_EXPECTED} Must send amount to deposit")
 
         pool = json.loads(self.liquidity_pools[pool_id])
         pool["total_deposits"] += amount
@@ -742,17 +735,6 @@ class MacroFiLending(gl.Contract):
         treasury = json.loads(self.treasury)
         treasury["total_deposited_wei"] -= amount
         self.treasury = json.dumps(treasury)
-        
-        # Native transfer back to lender
-        recipient = gl.contract(sender, _NativeRecipient)
-        recipient.value = amount
-        # Hack to execute empty write method to trigger payable transfer
-        try:
-            # Not calling anything directly on recipient because it's empty, but we must call a dummy write method if it had one.
-            # However, GenVM Native transfers require this exact shape.
-            pass
-        except Exception:
-            pass
 
     @gl.public.view
     def get_borrower_profile(self, wallet: str) -> str:
