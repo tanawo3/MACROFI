@@ -49,6 +49,8 @@ class Pool:
     current_base_rate_bps: u256
     status: str
     risk_score: u256
+    risk_tier: str
+    min_trust_score: u256
     last_update_rationale: str
     update_counter: u256
     history_json: str
@@ -84,8 +86,14 @@ class LoanApplication:
     pool_id: str
     borrower: str
     pitch: str
+    github_contributions: u256
+    dao_votes: u256
+    wallet_age_days: u256
     status: str
     ai_notes: str
+    positive_factors_json: str
+    risk_factors_json: str
+    confidence: u256
     collateral: u256
     debt: u256
     created_at: u256
@@ -140,9 +148,9 @@ class MacroFiLending(gl.Contract):
     # -------------------------------------------------------------------------
 
     @gl.public.write
-    def create_lending_pool(self, pool_id: str, asset_name: str, initial_rate: float) -> bool:
+    def create_lending_pool(self, pool_id: str, asset_name: str, initial_rate: float, risk_tier: str = "MEDIUM", min_trust_score: int = 0) -> bool:
         """
-        Registers a new macroeconomic capital pool with an initial base rate.
+        Registers a new macroeconomic capital pool with an initial base rate and risk tier.
         """
         self._require_owner()
         if pool_id in self.pools:
@@ -151,12 +159,17 @@ class MacroFiLending(gl.Contract):
         clean_asset = _deep_sanitize(asset_name)[:64]
         initial_bps = int(initial_rate * 100) # Convert float percentage to BPS (e.g. 5.5 -> 550)
         
+        if risk_tier not in ["LOW", "MEDIUM", "HIGH"]:
+            risk_tier = "MEDIUM"
+            
         pool = Pool(
             pool_id=f"ID-{pool_id}",
             asset_name=clean_asset,
             current_base_rate_bps=u256(initial_bps),
             status="ACTIVE",
             risk_score=u256(50),
+            risk_tier=risk_tier,
+            min_trust_score=u256(min_trust_score),
             last_update_rationale="Pool created.",
             update_counter=u256(0),
             history_json="[]"
@@ -167,13 +180,21 @@ class MacroFiLending(gl.Contract):
 
 
     @gl.public.write.payable
-    def apply_for_loan(self, pool_id: str, pitch: str) -> str:
+    def apply_for_loan(self, pool_id: str, pitch: str, github_contributions: int = 0, dao_votes: int = 0, wallet_age_days: int = 0) -> str:
         """
         Submit a collateral-backed loan application against a pool.
         The borrower must send GEN tokens as collateral with this transaction.
         """
         if pool_id not in self.pools and pool_id != "GLOBAL":
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Pool not found")
+            
+        if pool_id in self.pools:
+            pool = self.pools[pool_id]
+            prof = self.borrower_profiles.get(str(gl.message.sender_address))
+            trust = prof.trust_score if prof else u256(0)
+            if trust < pool.min_trust_score:
+                raise gl.vm.UserError(f"{ERROR_EXPECTED} Trust score too low for this risk tier")
+                
         clean_pitch = _deep_sanitize(pitch)[:2000]
         self.loan_app_counter = u256(int(self.loan_app_counter) + 1)
         a_id = f"LOAN-{int(self.loan_app_counter)}"
@@ -182,8 +203,14 @@ class MacroFiLending(gl.Contract):
             pool_id=pool_id,
             borrower=str(gl.message.sender_address),
             pitch=clean_pitch,
+            github_contributions=u256(github_contributions),
+            dao_votes=u256(dao_votes),
+            wallet_age_days=u256(wallet_age_days),
             status="PENDING",
             ai_notes="",
+            positive_factors_json="[]",
+            risk_factors_json="[]",
+            confidence=u256(0),
             collateral=u256(gl.message.value),
             debt=u256(0),
             created_at=u256(0)
@@ -205,22 +232,29 @@ class MacroFiLending(gl.Contract):
         
         pitch = app.pitch
         borrower = app.borrower
+        gh_contribs = int(app.github_contributions)
+        dao_votes = int(app.dao_votes)
+        wallet_age = int(app.wallet_age_days)
         
         def leader_fn() -> dict:
             prompt = f"Analyze this loan pitch for zero-day fraud and creditworthiness: {pitch}\nBorrower: {borrower}\n"
-            prompt += "Return JSON exactly like: {'status': 'APPROVED' or 'REJECTED' or 'COUNTER_OFFER', 'collateral_ratio_bps': <int>, 'reason': '<str>'}\n"
+            prompt += f"Web3 Metrics: GitHub Contributions={gh_contribs}, DAO Votes={dao_votes}, Wallet Age (days)={wallet_age}\n"
+            prompt += "Return JSON exactly like: {'status': 'APPROVED' or 'REJECTED' or 'COUNTER_OFFER', 'collateral_ratio_bps': <int>, 'reason': '<str>', 'confidence': <int 0-100>, 'positive_factors': ['<str>'], 'risk_factors': ['<str>']}\n"
             prompt += "NOTE: A highly trusted borrower gets 8000 (80% under-collateralized). A normal one gets 15000 (150%). Scams must be REJECTED."
             
             analysis = gl.nondet.exec_prompt(prompt, response_format="json")
             if isinstance(analysis, str):
                 import json
                 try: analysis = json.loads(analysis)
-                except: analysis = {"status": "REJECTED", "collateral_ratio_bps": 15000, "reason": "Parse error"}
+                except: analysis = {"status": "REJECTED", "collateral_ratio_bps": 15000, "reason": "Parse error", "confidence": 0, "positive_factors": [], "risk_factors": []}
                 
             return {
                 "status": analysis.get("status", "REJECTED"),
                 "collateral_ratio_bps": analysis.get("collateral_ratio_bps", 15000),
-                "reason": str(analysis.get("reason", ""))[:1024]
+                "reason": str(analysis.get("reason", ""))[:1024],
+                "confidence": int(analysis.get("confidence", 0)),
+                "positive_factors": analysis.get("positive_factors", []),
+                "risk_factors": analysis.get("risk_factors", [])
             }
             
         def validator_fn(leader_res) -> bool:
@@ -234,6 +268,9 @@ class MacroFiLending(gl.Contract):
         col_ratio = decision["collateral_ratio_bps"]
         
         app.ai_notes = decision["reason"]
+        app.confidence = u256(decision.get("confidence", 0))
+        app.positive_factors_json = json.dumps(decision.get("positive_factors", []))
+        app.risk_factors_json = json.dumps(decision.get("risk_factors", []))
         
         if status == "REJECTED":
             app.status = "REJECTED"
@@ -331,13 +368,25 @@ class MacroFiLending(gl.Contract):
             if aid not in self.loan_applications:
                 continue
             a = self.loan_applications[aid]
+            try:
+                pos = json.loads(a.positive_factors_json)
+                risk = json.loads(a.risk_factors_json)
+            except:
+                pos = []
+                risk = []
             out.append({
                 "app_id": a.app_id,
                 "pool_id": a.pool_id,
                 "borrower": a.borrower,
                 "pitch": a.pitch,
+                "github_contributions": int(a.github_contributions),
+                "dao_votes": int(a.dao_votes),
+                "wallet_age_days": int(a.wallet_age_days),
                 "status": a.status,
                 "ai_notes": a.ai_notes,
+                "confidence": int(a.confidence),
+                "positive_factors": pos,
+                "risk_factors": risk,
                 "collateral": str(int(a.collateral)),
                 "debt": str(int(a.debt))
             })
@@ -362,6 +411,8 @@ class MacroFiLending(gl.Contract):
             "current_base_rate": int(p.current_base_rate_bps) / 100.0,
             "status": p.status,
             "risk_score": int(p.risk_score),
+            "risk_tier": p.risk_tier,
+            "min_trust_score": int(p.min_trust_score),
             "last_update_rationale": p.last_update_rationale,
             "update_counter": int(p.update_counter),
             "history": hist
