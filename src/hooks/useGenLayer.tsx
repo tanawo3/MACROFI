@@ -580,6 +580,25 @@ export const useGenLayer = () => {
           setError("Failed to liquidate: " + (e?.message || ""));
       }
   };
+  const aiVouch = async (borrowerAddr: string, evidence: string) => {
+      if (!contractAddress) return;
+      setError(null);
+      try {
+          const provider = window.ethereum || (window as any).okxwallet || (window as any).rabby;
+          const client = getGenLayerClient(network, address, provider);
+          const hash = await (client as any).writeContract({
+              address: contractAddress,
+              account: address ? { address } : undefined,
+              functionName: 'ai_vouch',
+              args: [borrowerAddr, evidence]
+          });
+          addTx({ hash, type: 'evaluate_loan', status: 'pending', timestamp: Date.now() });
+          await (client as any).waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 5000, retries: 120 });
+          updateTxStatus(hash, 'success');
+      } catch (e: any) {
+          setError("Failed to vouch: " + (e?.message || ""));
+      }
+  };
 
   const stake = async (poolId: string, amount: number) => {
       if (!contractAddress) return;
@@ -650,6 +669,7 @@ export const useGenLayer = () => {
     updateConstitution,
     getDisputes,
     aiLiquidate,
+    aiVouch,
     stake,
     unstake,
     network,

@@ -146,6 +146,7 @@ class MacroFiLending(gl.Contract):
     macro_summaries: TreeMap[str, MacroSummary]
     pool_ids: DynArray[str]
     disputes: TreeMap[str, Dispute]
+    vouches: TreeMap[str, str]
     dispute_counter: u256
     protocol_constitution: str
     owner: str
@@ -381,6 +382,19 @@ class MacroFiLending(gl.Contract):
                 prof.trust_score = u256(0)
                 self.borrower_profiles[borrower] = prof
                 
+            # Cascade slashes to Vouchers (Credit Delegation penalty)
+            if borrower in self.vouches:
+                import json
+                try:
+                    vouchers = json.loads(self.vouches[borrower])
+                    for v in vouchers:
+                        if v in self.borrower_profiles:
+                            v_prof = self.borrower_profiles[v]
+                            # Slash their score by half for vouching for a bad actor
+                            v_prof.trust_score = u256(max(0, int(v_prof.trust_score) - 50))
+                            self.borrower_profiles[v] = v_prof
+                except: pass
+                
             # Send liquidation bounty to keeper
             keeper = str(gl.message.sender_address)
             bounty = int(app.collateral) // 20  # 5% bounty
@@ -394,6 +408,65 @@ class MacroFiLending(gl.Contract):
             
         return False
         
+    @gl.public.write
+    def ai_vouch(self, borrower: str, evidence: str) -> bool:
+        """
+        AI Vouching Protocol.
+        Allows a trusted user to vouch for a new/junior borrower.
+        """
+        voucher = str(gl.message.sender_address)
+        if voucher == borrower:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Cannot vouch for yourself")
+            
+        # Ensure voucher is trusted
+        if voucher not in self.borrower_profiles:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Voucher must have a profile")
+            
+        voucher_prof = self.borrower_profiles[voucher]
+        if int(voucher_prof.trust_score) < 50:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Voucher trust score too low")
+            
+        def leader_fn() -> dict:
+            prompt = "Evaluate if this vouch evidence proves a solid real-world or web3 relationship.\n"
+            prompt += f"<UNTRUSTED_DATA>\nEvidence: {evidence}\n</UNTRUSTED_DATA>\n"
+            prompt += "Return JSON exactly like: {'approved': true/false, 'reason': '<str>'}\n"
+            
+            analysis = gl.nondet.exec_prompt(prompt, response_format="json")
+            if isinstance(analysis, str):
+                import json
+                try: analysis = json.loads(analysis)
+                except: analysis = {"approved": False, "reason": "Parse error"}
+            return {
+                "approved": bool(analysis.get("approved", False)),
+                "reason": str(analysis.get("reason", ""))[:1024]
+            }
+            
+        def validator_fn(leader_res) -> bool:
+            if not isinstance(leader_res, gl.vm.Return): return False
+            data = leader_res.calldata
+            if not isinstance(data, dict): return False
+            return isinstance(data.get("approved"), bool)
+            
+        decision = gl.vm.run_nondet(leader_fn, validator_fn)
+        
+        if decision["approved"]:
+            import json
+            v_list = []
+            if borrower in self.vouches:
+                v_list = json.loads(self.vouches[borrower])
+            if voucher not in v_list:
+                v_list.append(voucher)
+                self.vouches[borrower] = json.dumps(v_list)
+                
+                # Boost borrower's trust score
+                if borrower in self.borrower_profiles:
+                    prof = self.borrower_profiles[borrower]
+                    prof.trust_score = u256(min(100, int(prof.trust_score) + 20))
+                    self.borrower_profiles[borrower] = prof
+            return True
+            
+        return False
+
     @gl.public.write
     def link_socials(self, github_handle: str, twitter_handle: str) -> bool:
         """Links Web2 social profiles to calculate Trust Score."""

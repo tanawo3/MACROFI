@@ -198,6 +198,29 @@ export const BorrowerDashboard: React.FC<{ genLayer: ReturnType<typeof useGenLay
           </Magnetic>
         </div>
       </div>
+
+      {/* AI VOUCHING / CREDIT DELEGATION CENTER */}
+      <div className="brutalist-panel p-8 border border-purple-900/50 relative overflow-hidden mt-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-900/10 blur-[100px] rounded-full mix-blend-screen pointer-events-none" />
+        <h4 className="text-purple-500 text-2xl font-display uppercase tracking-widest mb-6 flex items-center gap-3">
+          <i className="fa-solid fa-handshake"></i> AI Vouching (Social Credit)
+        </h4>
+        <p className="text-zinc-400 font-mono text-sm mb-6 max-w-2xl">
+          Delegate your Web3 Trust Score to a junior borrower. The AI Underwriter will evaluate your evidence. <br/>
+          <strong className="text-red-400">WARNING:</strong> If the borrower defaults, your Trust Score will be slashed!
+        </p>
+
+        <div className="flex flex-col gap-4">
+          <input type="text" placeholder="Borrower Address (0x...)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-purple-500 font-mono" value={(window as any).vouchBorrower || ''} onChange={e => (window as any).vouchBorrower = e.target.value} />
+          <textarea placeholder="Evidence (e.g. We built an AI protocol together, here is the repo URL...)" className="bg-transparent border border-zinc-700 p-3 outline-none focus:border-purple-500 min-h-[100px]" value={(window as any).vouchEvidence || ''} onChange={e => (window as any).vouchEvidence = e.target.value} />
+          
+          <Magnetic>
+            <button onClick={() => genLayer.aiVouch((window as any).vouchBorrower, (window as any).vouchEvidence)} className="bg-purple-900/30 text-purple-400 border border-purple-900 hover:bg-purple-500 hover:text-black transition-colors w-full py-3 mt-2 font-mono uppercase tracking-widest">SUBMIT AI VOUCH</button>
+          </Magnetic>
+        </div>
+      </div>
     </div>
   );
 };
+
+export default BorrowerDashboard;
